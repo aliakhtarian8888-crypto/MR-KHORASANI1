@@ -1,0 +1,30 @@
+{
+  "name": "MR, KHORASANI — حسابداری و مدیریت مالی",
+  "short_name": "MR KHORASANI",
+  "lang": "fa-IR",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#071326",
+  "theme_color": "#081A35",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "description": "سامانه حسابداری و مدیریت مالی MR, KHORASANI با محیط مهمان مستقل و قابل نصب",
+  "version": "2.7.1",
+  "version_name": "2.7.1-guest-pwa",
+  "id": "./",
+  "display_override": [
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
+  "prefer_related_applications": false
+}

@@ -1,0 +1,1 @@
+window.MRK_SUPABASE={url:'https://klomsegarpfdkhkmoazy.supabase.co',publishableKey:'sb_publishable_bkwQJ96fqM2zd0yu0XQ6LA_QJl2c2RV'};
