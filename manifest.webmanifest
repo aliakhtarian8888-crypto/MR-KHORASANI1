@@ -14,8 +14,8 @@
     {"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}
   ],
   "description": "سامانه حسابداری و مدیریت مالی MR, KHORASANI با محیط مهمان مستقل و قابل نصب",
-  "version": "2.7.1",
-  "version_name": "2.7.1-guest-pwa-local-audit",
+  "version": "2.7.2",
+  "version_name": "2.7.2-guest-pwa-local-audit",
   "id": "./",
   "display_override": [
     "standalone",
