@@ -9,7 +9,16 @@
   const SESSION_KEY = 'mrk-guest-session-v2';
   const TEMP_PREFIX = 'mrk-guest-temp-v2:';
   const REDACT = /(^|_)(phone|mobile|email|address|national.?id|passport|password|passwd|token|secret|iban|sheba|card.?number|card.?no|bank.?account|account.?number|account.?no|acct|username|full.?name|party.?name|party|customer|supplier|person|employee|worker|beneficiary|recipient|contact|tax.?id|economic.?code|name|desc|description|memo|note|notes|comment|narrative|free.?text)(_|$)/i;
-  const SAFE_AUDIT_KEYS = new Set(['document_no','invoice_no','reference_no','business_date','item_code','warehouse_code','field_key','action_key','page_key']);
+  const AUDIT_ALLOWED_KEYS = new Set([
+    'event_type','section','control_label','detail','kind','operation_type','business_date',
+    'document_no','invoice_no','reference_no','total_amount','gross_amount','discount_amount',
+    'freight_amount','tax_amount','line_count','quantity_total','items','payment_count',
+    'payment_total','payments','settlement_type','amount','item_code','warehouse_code',
+    'quantity','unit_price','line_amount','was_edited','field_key','field_type','checked',
+    'file_selected','file_count','option_index','option_count','numeric_value','value_length',
+    'tag','control_id','action_key','page_key','page_label','duration_ms'
+  ]);
+  const SENSITIVE_FIELD = /(phone|mobile|tel|email|name|party|customer|supplier|address|national.?id|passport|password|iban|sheba|card|account|contact|tax.?id|economic.?code)/i;
   function scrubText(value) {
     return String(value).replace(/[۰-۹٠-٩]/g, ch => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(ch) >= 0 ? '۰۱۲۳۴۵۶۷۸۹'.indexOf(ch) : '٠١٢٣٤٥٦٧٨٩'.indexOf(ch))).replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[حذف ایمیل]').replace(/(?:\+?\d[\d\s().-]{7,}\d)/g, '[حذف شماره]').replace(/\b[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b/gi, '[حذف شناسه بانکی]');
   }
@@ -33,24 +42,38 @@
     return {isGuestEntry, token, cleanUrl};
   }
 
-  function sanitizeAuditDetail(value, depth = 0) {
+  function sanitizeAuditDetail(value, depth = 0, parentKey = '') {
     if (depth > 5) return '[عمق بیش از حد]';
     if (value == null || typeof value === 'boolean' || typeof value === 'number') return value;
     if (typeof value === 'string') return scrubText(value).slice(0, 180);
-    if (Array.isArray(value)) return value.slice(0, 25).map(v => typeof v === 'string' ? '[متن آزاد حذف شد]' : sanitizeAuditDetail(v, depth + 1));
-    if (typeof value !== 'object') return String(value).slice(0, 120);
+    if (Array.isArray(value)) {
+      if (!['items','payments'].includes(parentKey)) return [];
+      return value.slice(0, parentKey === 'items' ? 30 : 20)
+        .map(v => sanitizeAuditDetail(v, depth + 1, parentKey));
+    }
+    if (typeof value !== 'object') return undefined;
     const out = {};
     for (const [key, val] of Object.entries(value).slice(0, 50)) {
       const normalized = key.replace(/[A-Z]/g, m => '_' + m).toLowerCase();
-      if (REDACT.test(normalized)) out[key] = '[حذف اطلاعات هویتی]';
-      else if (SAFE_AUDIT_KEYS.has(normalized) && typeof val === 'string') out[key] = val.replace(/[^\p{L}\p{N}._\/-]/gu, '').slice(0, 64);
-      else out[key] = sanitizeAuditDetail(val, depth + 1);
+      if (!AUDIT_ALLOWED_KEYS.has(normalized)) continue;
+      if (normalized === 'field_key') {
+        const field = String(val || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 60);
+        out.field_key = SENSITIVE_FIELD.test(field) ? 'sensitive_field' : field;
+        continue;
+      }
+      if (normalized === 'event_type') {
+        out.event_type = val === 'section_view' ? 'section_view' : 'tap';
+        continue;
+      }
+      out[normalized] = sanitizeAuditDetail(val, depth + 1, normalized);
     }
+    if (out.field_key === 'sensitive_field') delete out.numeric_value;
     let json = '';
     try { json = JSON.stringify(out); } catch { return {}; }
-    if (json.length > 3200) return {summary: json.slice(0, 3000), truncated: true};
+    if (json.length > 3200) return {summary: '[جزئیات بیش از حد مجاز حذف شد]', truncated: true};
     return out;
   }
+
 
   function create(options = {}) {
     const sessionStorage = safeStorage(options.sessionStorage);
@@ -143,20 +166,43 @@
     let eventQueue = Promise.resolve();
     let pendingEvents = [];
     let eventTimer = null;
+    function pendingEventsKey() { return TEMP_PREFIX + sessionId + ':audit-queue'; }
+    function persistPendingEvents() {
+      try { if (sessionStorage && pendingEvents.length) sessionStorage.setItem(pendingEventsKey(), JSON.stringify(pendingEvents.slice(-240))); else sessionStorage?.removeItem(pendingEventsKey()); } catch {}
+    }
+    function restorePendingEvents() {
+      try {
+        const rows = JSON.parse(sessionStorage?.getItem(pendingEventsKey()) || '[]');
+        return Array.isArray(rows) ? rows.slice(-240) : [];
+      } catch { return []; }
+    }
+    pendingEvents = restorePendingEvents();
     function flushEvents(requestOptions = {}) {
       if (eventTimer) { clearTimeout(eventTimer); eventTimer = null; }
       if (!pendingEvents.length) return eventQueue;
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) { persistPendingEvents(); return Promise.resolve(false); }
       const batch = pendingEvents.splice(0, 20);
-      const queued = eventQueue.then(() => request('event', {events:batch}, requestOptions));
-      eventQueue = queued.catch(() => false);
+      persistPendingEvents();
+      const queued = eventQueue.then(async () => {
+        const result = await request('event', {events:batch}, requestOptions);
+        persistPendingEvents();
+        return result;
+      });
+      eventQueue = queued.catch(() => {
+        pendingEvents = [...batch, ...pendingEvents].slice(-240);
+        persistPendingEvents();
+        return false;
+      });
       if (pendingEvents.length) eventTimer = setTimeout(() => flushEvents().catch(() => false), 1800);
       return queued;
     }
     function event(data = {}, requestOptions = {}) {
       if (!token || stopped) return Promise.resolve(false);
       pendingEvents.push(sanitizeAuditDetail(data));
+      if (pendingEvents.length > 240) pendingEvents = pendingEvents.slice(-240);
+      persistPendingEvents();
       if (requestOptions.immediate || pendingEvents.length >= 20) return flushEvents(requestOptions);
-      if (!eventTimer) eventTimer = setTimeout(() => flushEvents().catch(() => false), 900);
+      if (!eventTimer && !(typeof navigator !== 'undefined' && navigator.onLine === false)) eventTimer = setTimeout(() => flushEvents().catch(() => false), 900);
       return Promise.resolve({ok:true, queued:true});
     }
     async function heartbeat() { if (!token || stopped) return false; return request('heartbeat'); }

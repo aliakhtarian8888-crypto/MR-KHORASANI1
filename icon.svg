@@ -1,1 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#081a35"/><path d="M90 370V140h70l96 126 96-126h70v230h-72V258L256 370l-94-112v112z" fill="#d6ad55"/><path d="M78 408c94-73 174-87 260-58 40 13 69 10 98-8-32 47-82 73-139 66-68-9-124-17-219 0z" fill="#285b9a" stroke="#d6ad55" stroke-width="7"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0b5"/><stop offset=".45" stop-color="#d6ad55"/><stop offset="1" stop-color="#9b6b20"/></linearGradient><linearGradient id="b" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#153862"/><stop offset="1" stop-color="#050f20"/></linearGradient></defs>
+<rect x="8" y="8" width="496" height="496" rx="112" fill="url(#b)" stroke="#d6ad55" stroke-width="8"/>
+<path d="M72 330 C170 235 268 170 438 92" fill="none" stroke="url(#g)" stroke-width="13" stroke-linecap="round"/>
+<path d="M58 386 C164 302 285 255 454 208" fill="none" stroke="#d6ad55" stroke-width="5" opacity=".7"/>
+<text x="256" y="322" text-anchor="middle" font-family="Georgia,Times New Roman,serif" font-size="206" font-weight="700" fill="url(#g)" letter-spacing="-18">MR</text>
+<g transform="translate(375 62)" fill="none" stroke="#f2d28c" stroke-width="9"><rect x="0" y="0" width="72" height="82" rx="10"/><path d="M13 20h46M15 39h10m12 0h10m12 0h10M15 57h10m12 0h10m12 0h10M15 73h10m12 0h10"/></g>
+</svg>
