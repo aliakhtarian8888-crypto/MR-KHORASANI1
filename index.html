@@ -1167,7 +1167,7 @@ function dataCenterPage(){
  const options=[['unified','خروجی/ورودی یکپارچه MR (تمام انواع عملیات)'],['parties','اشخاص'],['goods','کالاها و موجودی اول دوره تمام انبارها'],['sources','صندوق و بانک و منابع مالی'],['coa','کدینگ حساب‌ها'],['rp','دریافت و پرداخت خارج از فاکتور'],['exp','هزینه‌ها'],['inv','فاکتورهای فروش و خرید'],['boms','فرمول‌های ساخت (BOM)'],['productionOrders','دستورهای ساخت و اسناد مرتبط']];
  return '<div class="card"><div class="ftitle">مرکز یکپارچه ورود و خروج اطلاعات</div><div class="hint">خروجی یکپارچه شامل اطلاعات پایه، گردش‌های ثبت‌شده، جزئیات کامل عملیات، اسناد حذف‌شده، گردش چک‌ها، حواله و انتقال انبار، سند دستی، استهلاک، تولید و اطلاعات آرشیوی است. برای بازگردانی دقیق از همین ساختار استفاده کنید.</div><div class="row mt"><button class="btn pri" data-a="dataExcelExport">⬇️ دانلود اکسل یکپارچه اطلاعات موجود</button><button class="btn" data-a="bakDl">💾 پشتیبان کامل JSON</button></div><div class="hint">اکسل، اطلاعات واقعی موجود را صادر می‌کند و قالب خالی نیست. پشتیبان JSON برای بازیابی کامل و جایگزینی پایگاه کاری، از جمله آرشیو سال‌های گذشته، مسیر مطمئن‌تر است.</div></div>'+
  '<div class="card"><div class="ftitle">ورود اطلاعات از Excel / Google Sheets</div><label>نوع فایل یا اطلاعات</label><select id="dataImportKind" class="wide">'+sel(options,UI.dataImportKind||'unified')+'</select><div class="row mt"><button class="btn pri" data-a="dataPaste">📋 چسباندن از اکسل</button><label class="btn filebtn">📂 انتخاب فایل Excel<input type="file" data-imp="data" accept=".xlsx,.xls,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/octet-stream,*/*"></label></div><div class="hint">در ورود عادی، عنوان ستون‌ها شناسایی و جابه‌جایی ستون‌ها اصلاح می‌شود. در ورود یکپارچه MR، جزئیات JSON هر رکورد خوانده می‌شود تا انواع پیچیده عملیات نیز بدون حذف اقلام و پرداخت‌ها بازیابی شوند. رکوردهای تکراری با شناسه یا کد شناسایی و دوباره ثبت نمی‌شوند.</div></div>'+
- '<div class="card"><div class="ftitle">قالب‌های استاندارد ورود</div>'+Object.keys(TPL).map(k=>'<div class="orow"><div><b>'+esc(TPL[k].n)+'</b><div class="hint">'+esc(TPL[k].h.slice(0,4).join('، '))+'</div></div><div class="acts"><button class="btn sm" data-a="tpl" data-p="'+k+'">دانلود قالب</button><button class="btn sm" data-a="pasteImp" data-p="'+k+'">چسباندن</button></div></div>').join('')+'</div>'+
+ '<div class="card"><div class="ftitle">قالب‌های استاندارد ورود و خروج</div>'+Object.keys(TPL).map(k=>'<div class="orow"><div><b>'+esc(TPL[k].n)+'</b><div class="hint">'+esc(TPL[k].h.slice(0,4).join('، '))+'</div></div><div class="acts"><button class="btn sm" data-a="tpl" data-p="'+k+'">دانلود قالب</button><button class="btn sm" data-a="exportBaseData" data-p="'+k+'">خروجی اطلاعات موجود</button><button class="btn sm" data-a="pasteImp" data-p="'+k+'">چسباندن</button></div></div>').join('')+'</div>'+
  '<div class="card"><div class="ftitle">قواعد ایمنی ورود گروهی</div><ul class="hint"><li>ابتدا فایل را در محیط آزمایشی وارد و گزارش‌های مربوط را کنترل کنید.</li><li>مبالغ و تعدادها باید عددی و تاریخ‌ها در سال مالی فعال باشند.</li><li>فاکتور تکراری یا عملیات مربوط به روز بسته‌شده بدون نسخه ثابت وارد نمی‌شود.</li><li>ورود از فایل، عملیات را از مسیر موتور حسابداری عبور می‌دهد؛ گزارش‌ها مستقیماً قابل ویرایش نیستند.</li><li>دسترسی ورود و خروج تابع مجوز «پشتیبان و خروجی» کاربر است.</li></ul></div>';
 }
 function exportBaseData(k){
@@ -1215,7 +1215,9 @@ function importBomRows(body){
   const product=S.goods.find(g=>(code&&String(g.code)===code)||(name&&g.name===name));
   const material=S.goods.find(g=>(materialCode&&String(g.code)===materialCode)||(materialName&&g.name===materialName));
   if(!product){errors.push('ردیف '+fa(row)+': محصول با کد/نام واردشده پیدا نشد');return}
+  if(product.kind!=='finished'){errors.push('ردیف '+fa(row)+': کالای انتخاب‌شده از نوع محصول ساخته‌شده نیست');return}
   if(!material){errors.push('ردیف '+fa(row)+': ماده اولیه با کد/نام واردشده پیدا نشد');return}
+  if(material.kind!=='material'){errors.push('ردیف '+fa(row)+': کالای انتخاب‌شده از نوع ماده اولیه نیست');return}
   if(!(batchQty>0&&qty>0)){errors.push('ردیف '+fa(row)+': مقدار خروجی بچ و مصرف ماده باید مثبت باشد');return}
   const key=product.id,group=groups.get(key)||{productId:key,batchQty,desc:String(r[4]||''),id:String(r[9]||'').trim(),materials:[]};
   if(Math.abs(group.batchQty-batchQty)>0.0000001){errors.push('ردیف '+fa(row)+': مقدار خروجی بچ برای یک محصول یکسان نیست');return}
@@ -1243,6 +1245,12 @@ function importProductionOrderRows(body){
   try{
    const order=JSON.parse(raw),ops=opsRaw?JSON.parse(opsRaw):[];
    if(!order||!order.id||!order.orderNo||!order.productId||!Array.isArray(order.materials)||!Array.isArray(ops))throw new Error('ساختار ناقص');
+   if(!S.goods.some(g=>g.id===order.productId))throw new Error('محصول این دستور در فهرست کالاهای این پایگاه داده وجود ندارد');
+   if(!normDate(order.date)||String(normDate(order.date)).slice(0,4)!==String(S.fy))throw new Error('تاریخ دستور خارج از سال مالی فعال یا نامعتبر است');
+   if(isClosed(normDate(order.date)))throw new Error('روز دستور ساخت بسته شده است');
+   if(!warehouseList().some(w=>w.id===order.materialWarehouse)||!warehouseList().some(w=>w.id===order.finishedWarehouse))throw new Error('شناسه انبارهای دستور در این پایگاه داده وجود ندارد');
+   if(order.materials.some(m=>!S.goods.some(g=>g.id===m.g)||!(num(m.q)>0)))throw new Error('مواد یا مقادیر مصرف دستور معتبر نیست');
+   if(ops.some(op=>op.prodOrderId!==order.id||!op.type||!normDate(op.date)))throw new Error('عملیات مرتبط با شناسه دستور یا تاریخ آن تطبیق ندارد');
    addDataExcelRow(records,'productionOrder',order,{id:order.id,date:order.date,code:order.orderNo,name:r[4]||'',status:order.status,amount:order.quantity});
    ops.forEach(op=>addDataExcelRow(records,'operation',op,{id:op.id,date:op.date,opType:op.type,code:op.no,name:op.desc,status:op.status,amount:opAmt(op)}));
   }catch(e){errors.push('ردیف '+fa(row)+': JSON دستور یا عملیات مرتبط معتبر نیست')}
