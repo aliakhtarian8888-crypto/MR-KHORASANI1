@@ -1,0 +1,43 @@
+name: Package full MR-KHORASANI project
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/package-full-project.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: write
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Run project tests
+        run: node --test tests/*.test.cjs
+      - name: Verify required application files
+        run: |
+          test -s index.html
+          test -s app.js
+          test -s mrk-data-tools.js
+          test -s mrk-export-store.js
+          test -s warehouse-migration.js
+          test -s manifest.webmanifest
+          test -s sw.js
+      - name: Package complete project
+        run: |
+          mkdir -p dist
+          zip -r dist/MR-KHORASANI-FULL-PROJECT.zip . \
+            -x "./.git/*" "./dist/*" "./node_modules/*"
+          unzip -t dist/MR-KHORASANI-FULL-PROJECT.zip
+          sha256sum dist/MR-KHORASANI-FULL-PROJECT.zip
+      - name: Upload downloadable ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: MR-KHORASANI-FULL-PROJECT
+          path: dist/MR-KHORASANI-FULL-PROJECT.zip
+          if-no-files-found: error
+          retention-days: 30
