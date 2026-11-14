@@ -984,6 +984,7 @@ function runImport(k,rows){
  const t=templateSpec(k);if(!t)return 'نوع اطلاعات انتخاب‌شده معتبر نیست';
  const aliases=templateAliases(k,t);
  const mapped=window.MRKDataTools?MRKDataTools.mapImportRows(rows,t.h,aliases):{rows:rows,mode:'positional',matched:0,mapping:[]};
+ if(mapped.mode==='ambiguous-header')return 'عنوان ستون‌ها ناقص یا نامرتبط است؛ ورود متوقف شد تا اطلاعات در ستون اشتباه ثبت نشود.';
  let body=mapped.rows||[];
  if(k==='goods'&&mapped.mode==='positional'&&body.length&&body[0].length===8){
   body=body.map(r=>{const z=[r[0],r[1],r[2],'کالای بازرگانی',r[3]];warehouseList().forEach((w,i)=>z.push(r[4+i*2]||0,r[5+i*2]||0));z.push(0);return z});
@@ -1042,6 +1043,7 @@ function unifiedExcelRows(){
 }
 function runUnifiedImport(inputRows){
  const mapped=MRKDataTools.mapImportRows(inputRows,DATA_EXCEL_HEADERS,DATA_EXCEL_ALIASES);
+ if(mapped.mode==='ambiguous-header')return 'فقط بخشی از عنوان ستون‌ها شناسایی شد؛ فایل از نوع دیگری است یا ستون‌های ضروری آن کامل نیست. فایل یکپارچه MR را انتخاب کنید یا سرستون‌های کامل را نگه دارید.';
  if(mapped.mode==='empty'||!mapped.rows.length)return 'ردیف اطلاعاتی پیدا نشد.';
  if(mapped.matched<2)return 'سرستون‌های خروجی یکپارچه شناسایی نشدند. برای ورود کامل، فایل خروجی یکپارچه MR را انتخاب کنید.';
  const entries=[],bad=[];
