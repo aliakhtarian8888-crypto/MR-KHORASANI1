@@ -791,6 +791,13 @@ const localExportStore=window.MRKExportStore?.createBrowserStore(window.indexedD
 const exportRecordCache=new Map();
 function requestBlobDownload(name,blob){
  try{
+  if(window.AndroidBridge&&typeof window.AndroidBridge.saveFile==='function'){
+   const reader=new FileReader();
+   reader.onload=()=>{const data=String(reader.result||'').split(',')[1]||'';if(!data){toast('خواندن فایل خروجی ناموفق بود');return}window.AndroidBridge.saveFile(name,blob.type||'application/octet-stream',data)};
+   reader.onerror=()=>toast('آماده‌سازی فایل برای ذخیره در گوشی ناموفق بود');
+   reader.readAsDataURL(blob);
+   return true;
+  }
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download=name;a.rel='noopener';a.style.cssText='position:fixed;left:-10000px;top:0';
   document.body.appendChild(a);a.click();
