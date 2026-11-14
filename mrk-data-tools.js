@@ -111,5 +111,106 @@
     return result;
   }
 
-  return { latinDigits, normalizeHeader, mapImportRows, buildCardex, classifyOperation, uniqueByRecordId };
+
+  function buildCardexLedger(input) {
+    const source = input || {};
+    const goods = Array.isArray(source.goods) ? source.goods : [];
+    const warehouses = Array.isArray(source.warehouses) ? source.warehouses : [];
+    const openingRows = Array.isArray(source.openingRows) ? source.openingRows : [];
+    const movements = Array.isArray(source.movements) ? source.movements : [];
+    const filters = source.filters || {};
+    const from = String(filters.from || '');
+    const to = String(filters.to || '9999/99/99');
+    const goodsQuery = normalizeHeader(filters.goodsQuery || '');
+    const partyQuery = normalizeHeader(filters.partyQuery || '');
+    const warehouseId = String(filters.warehouseId || '');
+    const goodsById = new Map(goods.map(g => [String(g.id), g]));
+    const warehousesById = new Map(warehouses.map(w => [String(w.id), w]));
+    const allowedGoods = new Set(goods.filter(g => {
+      if (!goodsQuery) return true;
+      return normalizeHeader([g.code, g.name, g.unit].join(' ')).includes(goodsQuery);
+    }).map(g => String(g.id)));
+    const allowedWarehouses = new Set(warehouses.filter(w =>
+      !warehouseId || String(w.id) === warehouseId
+    ).map(w => String(w.id)));
+    const balances = new Map();
+    const keyOf = (g, w) => String(g) + '|' + String(w);
+    const getBalance = (g, w) => {
+      const key = keyOf(g, w);
+      if (!balances.has(key)) balances.set(key, {goodsId:String(g),warehouseId:String(w),quantity:0,value:0});
+      return balances.get(key);
+    };
+    const validKey = (g, w) => allowedGoods.has(String(g)) && allowedWarehouses.has(String(w));
+    openingRows.forEach(x => {
+      if (!x || !validKey(x.g, x.w)) return;
+      const b = getBalance(x.g, x.w);
+      b.quantity += Number(x.q) || 0;
+      b.value += Number(x.v) || 0;
+    });
+    const sorted = movements.filter(x => x && validKey(x.g, x.w) && String(x.date || '') <= to)
+      .slice().sort((a,b) => String(a.date||'').localeCompare(String(b.date||'')) ||
+        (Number(a.no)||0)-(Number(b.no)||0) || String(a.id||'').localeCompare(String(b.id||'')));
+    sorted.filter(x => String(x.date||'') < from).forEach(x => {
+      const b = getBalance(x.g, x.w);
+      b.quantity += Number(x.q) || 0;
+      b.value += Number(x.v) || 0;
+    });
+    const snapshot = () => [...balances.values()].map(b => ({
+      goodsId:b.goodsId, warehouseId:b.warehouseId,
+      code:(goodsById.get(b.goodsId)||{}).code || '',
+      goodsName:(goodsById.get(b.goodsId)||{}).name || '',
+      unit:(goodsById.get(b.goodsId)||{}).unit || '',
+      warehouseName:(warehousesById.get(b.warehouseId)||{}).name || '',
+      quantity:b.quantity, value:b.value
+    })).sort((a,b)=>a.goodsCode.localeCompare(b.goodsCode)||a.goodsName.localeCompare(b.goodsName)||a.warehouseName.localeCompare(b.warehouseName));
+    const opening = snapshot();
+    const visible = [];
+    sorted.filter(x => String(x.date||'') >= from && String(x.date||'') <= to).forEach(x => {
+      const b = getBalance(x.g, x.w);
+      const q = Number(x.q) || 0, v = Number(x.v) || 0;
+      b.quantity += q;
+      b.value += v;
+      const personText = normalizeHeader(x.partyName || '');
+      if (partyQuery && !personText.includes(partyQuery)) return;
+      const g = goodsById.get(String(x.g)) || {};
+      const w = warehousesById.get(String(x.w)) || {};
+      visible.push({
+        id:String(x.id||''), date:String(x.date||''), no:x.no==null?'':x.no,
+        type:String(x.type||''), description:String(x.description||''),
+        goodsId:String(x.g), code:g.code||'', goodsName:g.name||'', unit:g.unit||'',
+        partyId:String(x.partyId||''), partyName:String(x.partyName||''),
+        warehouseId:String(x.w), warehouseName:w.name||'',
+        inQuantity:q>0?q:0, outQuantity:q<0?-q:0,
+        inValue:v>0?v:0, outValue:v<0?-v:0,
+        quantity:q, value:v, balanceQty:b.quantity, balanceValue:b.value
+      });
+    });
+    return { opening, movements:visible, closing:snapshot() };
+  }
+
+  function selectScopeRows(rows, scope) {
+    if (!Array.isArray(rows) || !rows.length) return [];
+    const header = rows[0];
+    const records = rows.slice(1).filter(row => {
+      const recordType = String(row && row[0] || '');
+      const operationType = String(row && row[3] || '');
+      if (scope === 'all' || scope === 'operations') return true;
+      if (scope === 'cheques') return recordType === 'carryCheque' || (recordType === 'operation' && classifyOperation(operationType) === 'cheques');
+      if (scope === 'receipts' || scope === 'issues' || scope === 'transfers') return recordType === 'operation' && classifyOperation(operationType) === scope;
+      if (scope === 'warehouseOps') return recordType === 'operation' && ['receipts','issues','transfers'].includes(classifyOperation(operationType));
+      if (scope === 'cardex') return recordType === 'operation' && ['receipts','issues','transfers'].includes(classifyOperation(operationType));
+      if (scope === 'warehouses') return recordType === 'warehouse';
+      if (scope === 'workers') return recordType === 'worker';
+      if (scope === 'boms') return recordType === 'bom';
+      if (scope === 'productionOrders') return recordType === 'productionOrder';
+      if (scope === 'parties') return recordType === 'party';
+      if (scope === 'goods' || scope === 'inventory') return recordType === 'good' || recordType === 'openingStock';
+      if (scope === 'sources') return recordType === 'source';
+      if (scope === 'coa') return recordType === 'account';
+      return recordType === scope;
+    });
+    return [header, ...records];
+  }
+
+  return { latinDigits, normalizeHeader, mapImportRows, buildCardex, buildCardexLedger, classifyOperation, uniqueByRecordId, selectScopeRows };
 });
