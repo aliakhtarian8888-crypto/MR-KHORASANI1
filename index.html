@@ -934,7 +934,7 @@ function treasuryPage(){const id=UI.tr||'cs';const td=today(),f=flows(td,td);
  const tile=(t,v,i)=>`<div class="kcard"><div class="kt">${t}</div><div class="kv">${fmt(v)}</div></div>`;
  return `<div class="kgrid">${tile('موجودی صندوق',B.ab['1101']||0)}${tile('موجودی بانک‌ها',B.ab['1201']||0)}${tile('موجودی تنخواه',B.ab['1301']||0)}${tile('دریافت امروز',f.rcv)}${tile('پرداخت امروز',f.pay)}${tile('خالص امروز',f.rcv-f.pay)}</div>`+chips(TR_TABS,id,'trTab')+repBlock(id)}
 ACT.trTab=p=>{UI.tr=p;render()};
-function chequesPage(){const id=UI.ck||'ck_in';return `<div class="tgrid">${['دریافت چک','پرداخت چک','وصول چک','برگشت چک','پاس چک پرداختی'].filter(n=>can('ck')).map(n=>`<button class="tbtn" data-a="goType" data-p="${n}"><span>${TI[n].ic}</span>${n}</button>`).join('')}</div>`+chips(CK_TABS,id,'ckTab')+repBlock(id)}
+function chequesPage(){const id=UI.ck||'ck_in';return excelTransferPanel('chequeEntries','cheques')+`<div class="tgrid">${['دریافت چک','پرداخت چک','وصول چک','برگشت چک','پاس چک پرداختی'].filter(n=>can('ck')).map(n=>`<button class="tbtn" data-a="goType" data-p="${n}"><span>${TI[n].ic}</span>${n}</button>`).join('')}</div>`+chips(CK_TABS,id,'ckTab')+repBlock(id)}
 ACT.ckTab=p=>{UI.ck=p;render()};
 function reportsPage(){const g=UI.rg||REPGROUPS[0][0],grp=REPGROUPS.find(x=>x[0]===g)||REPGROUPS[0];if(!REP[UI.rep]||!grp[1].includes(UI.rep))UI.rep=grp[1][0];
  return chips(REPGROUPS.map(x=>[x[0],x[0]]),grp[0],'rg')+chips(grp[1].map(k=>[k,REP[k].t]),UI.rep,'rp')+repBlock(UI.rep)}
@@ -942,7 +942,11 @@ ACT.rg=p=>{UI.rg=p;UI.rep=null;UI.rf={};render()};ACT.rp=p=>{UI.rep=p;render()};
 
 /* ---------- اشخاص، کالا، منابع، کدینگ ---------- */
 const hasClosed=()=>Object.values(S.days).some(d=>d.closed);
-function warehousePage(){return `<div class="card"><div class="ftitle">تعریف و مدیریت انبارها</div><div class="hint">هر انبار حساب معین مستقل موجودی کالا دارد. انبار دارای سابقه حذف نمی‌شود تا گردش و اسناد تاریخی مخدوش نشود.</div>${warehouseList().map(w=>`<div class="orow"><div><b>${esc(w.name)}</b><div class="hint">شناسه: ${esc(w.id)} — حساب موجودی: ${fa(w.acc)}</div></div><div class="acts"><button class="btn sm" data-a="editWarehouse" data-p="${esc(w.id)}">ویرایش نام</button></div></div>`).join('')}</div><div class="card"><div class="ftitle">افزودن انبار جدید</div><label>نام انبار</label><input id="wh_name" placeholder="مثلاً انبار مواد اولیه"><button class="btn pri wide" data-a="saveWarehouse">ثبت انبار و ایجاد حساب موجودی</button></div>`}
+function excelTransferPanel(inputKind,exportKind){
+ const t=templateSpec(inputKind),out=exportKind||inputKind;
+ return '<div class="card"><div class="ftitle">ورود و خروج Excel — '+esc(t.n)+'</div><div class="row"><button class="btn" data-a="exportBaseData" data-p="'+out+'">⬇️ خروجی اطلاعات موجود</button><button class="btn" data-a="tpl" data-p="'+inputKind+'">📄 قالب ورود</button><button class="btn" data-a="tplCopy" data-p="'+inputKind+'">📋 کپی قالب</button><button class="btn" data-a="pasteImp" data-p="'+inputKind+'">📥 چسباندن</button><label class="btn filebtn">📂 ورود فایل Excel<input type="file" data-imp="'+inputKind+'" accept=".xlsx,.xls,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/octet-stream,*/*"></label></div><div class="hint">سرستون‌ها شناسایی و در صورت جابه‌جایی مرتب می‌شوند؛ ثبت نهایی از کنترل‌های عملیاتی و حسابداری عبور می‌کند.</div></div>';
+}
+function warehousePage(){return excelTransferPanel('warehouses')+`<div class="card"><div class="ftitle">تعریف و مدیریت انبارها</div><div class="hint">هر انبار حساب معین مستقل موجودی کالا دارد. انبار دارای سابقه حذف نمی‌شود تا گردش و اسناد تاریخی مخدوش نشود.</div>${warehouseList().map(w=>`<div class="orow"><div><b>${esc(w.name)}</b><div class="hint">شناسه: ${esc(w.id)} — حساب موجودی: ${fa(w.acc)}</div></div><div class="acts"><button class="btn sm" data-a="editWarehouse" data-p="${esc(w.id)}">ویرایش نام</button></div></div>`).join('')}</div><div class="card"><div class="ftitle">افزودن انبار جدید</div><label>نام انبار</label><input id="wh_name" placeholder="مثلاً انبار مواد اولیه"><button class="btn pri wide" data-a="saveWarehouse">ثبت انبار و ایجاد حساب موجودی</button></div>`}
 ACT.editWarehouse=id=>{if(!can('wh'))return toast('دسترسی انبارداری ندارید');const w=warehouseList().find(x=>x.id===String(id));if(!w)return;const n=prompt('نام جدید انبار',w.name);if(n===null)return;if(!n.trim())return toast('نام انبار الزامی است');if(commit(c=>{const x=c.warehouses.find(z=>String(z.id)===String(id));x.name=n.trim();const a=c.accounts.find(a=>a.code===x.acc);if(a)a.name='موجودی کالا – '+x.name},'ویرایش','انبار',id,w.name,n.trim())){index(B);render();toast('نام انبار اصلاح شد')}};
 ACT.saveWarehouse=()=>{if(!can('wh'))return toast('دسترسی انبارداری ندارید');const name=($('#wh_name')?.value||'').trim();if(!name)return toast('نام انبار را وارد کنید');if(warehouseList().some(w=>w.name.trim()===name))return toast('این نام انبار تکراری است');if(commit(c=>{const used=warehouseList(c).map(w=>+w.acc||0);let code=Math.max(1602,...used)+1;while(c.accounts.some(a=>a.code===String(code)))code++;const id=mkid(c,'w');c.warehouses=c.warehouses||[];c.warehouses.push({id,name,acc:String(code)});c.accounts.push({code:String(code),name:'موجودی کالا – '+name})},'ایجاد','انبار',name,'','انبار جدید')){index(B);render();toast('انبار و حساب معین موجودی آن ایجاد شد')}};
 function basePage(){const t=UI.base;let h=chips([['parties','👥 اشخاص'],['goods','👕 کالاها'],['warehouses','🏬 تعریف انبارها'],['stock','📊 موجودی انبارها'],['sources','🏦 منابع مالی'],['coa','📚 کدینگ حساب‌ها']].filter(([k])=>k!=='warehouses'||can('wh')),t,'bt');
@@ -950,7 +954,7 @@ function basePage(){const t=UI.base;let h=chips([['parties','👥 اشخاص'],[
  if(t==='parties'){const q=UI.q||'';h+=tplBar('parties')+`<div class="card"><input placeholder="جستجوی نام یا کد" data-a="" id="qBox" value="${esc(q)}" oninput="UI.q=this.value;partyList()"><div id="plist">${partyListHtml()}</div></div>`+partyForm()}
  else if(t==='goods')h+=tplBar('goods')+`<div class="card" id="glist">${goodListHtml()}</div>`+goodForm();
  else if(t==='warehouses')h+=can('wh')?warehousePage():'<div class="card warn">دسترسی مدیریت انبار ندارید.</div>';
- else if(t==='stock')h+=repBlock('iv')+cardexPage();
+ else if(t==='stock')h+=repBlock('iv')+excelTransferPanel('warehouseOps','warehouseOps')+cardexPage();
  else if(t==='sources')h+=tplBar('sources')+`<div class="card"><div class="hint">مانده اول دوره هر صندوق و بانک در ابتدا صفر است و تا پیش از بستن نخستین روز قابل ویرایش است؛ پس از آن اصلاح فقط با سند اصلاحی ممکن است.</div>${S.sources.map(s=>`<div class="orow" style="flex-wrap:wrap"><div><b>${esc(s.name)}</b><div class="hint">${s.kind} — موجودی فعلی: ${balTxt(B.sb[s.id]||0)}</div></div><div class="acts" style="flex:1;min-width:210px"><input class="money" inputmode="numeric" id="so_${s.id}" placeholder="مانده اول دوره" value="${s.open?money(s.open):''}" ${hasClosed()?'disabled':''}><button class="btn sm" data-a="saveSrcOpen" data-p="${s.id}" ${hasClosed()?'disabled':''}>ذخیره مانده</button><button class="btn sm" data-a="editSrc" data-p="${s.id}">ویرایش</button></div></div>`).join('')}</div>`+srcForm();
  else h+=tplBar('coa')+coaHtml();
  return h}
@@ -1048,6 +1052,7 @@ ACT.saveSrc=()=>{if(!can('bs'))return toast('دسترسی ندارید');const n
 function productionPage(){
  if(!can('prod'))return '<div class="card warn">دسترسی مدیریت تولید ندارید.</div>';
  const tabs=[['orders','🧾 دستور ساخت'],['bom','🧩 فرمول ساخت'],['workers','👷 کارگران تولید'],['report','📊 گزارش بهای تولید']];let h=chips(tabs,UI.prodTab||'orders','prodTab');
+ if(UI.prodTab==='workers')h+=excelTransferPanel('workers');
  const transferKind=UI.prodTab==='bom'?'boms':UI.prodTab==='orders'?'productionOrders':'';
  if(transferKind){
   const transferTitle=transferKind==='boms'?'فرمول‌های ساخت':'دستورهای ساخت و اسناد مرتبط';
@@ -1191,7 +1196,6 @@ function importOperationalScope(kind,inputRows){
 }
 function runImport(k,rows){
  if(['operations','cheques','receipts','issues','transfers','warehouseOps','inventory','cardex'].includes(k))return importOperationalScope(k,rows);
- if(['operations','cheques','receipts','issues','transfers','cardex'].includes(k))return importOperationalScope(k,rows);
  const t=templateSpec(k);if(!t)return 'نوع اطلاعات انتخاب‌شده معتبر نیست';
  const aliases=templateAliases(k,t);
  let mapped=null,legacyGoods=false;
