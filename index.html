@@ -1109,7 +1109,7 @@ function runUnifiedImport(inputRows){
     case'productionOrder':{
      const date=normDate(o.date);
      if(!o.id||!o.orderNo||!o.productId||!date||String(date).slice(0,4)!==String(state.fy)){stats.errors.push('ردیف '+fa(entry.row)+': اطلاعات پایه یا تاریخ دستور ساخت معتبر نیست');break}
-     if(!state.goods.some(g=>g.id===o.productId)||!warehouseList().some(w=>w.id===o.materialWarehouse)||!warehouseList().some(w=>w.id===o.finishedWarehouse)){stats.errors.push('ردیف '+fa(entry.row)+': محصول یا انبارهای دستور ساخت در اطلاعات پایه یافت نشدند');break}
+     if(!state.goods.some(g=>g.id===o.productId)||!(state.warehouses||[]).some(w=>String(w.id)===String(o.materialWarehouse))||!(state.warehouses||[]).some(w=>String(w.id)===String(o.finishedWarehouse))){stats.errors.push('ردیف '+fa(entry.row)+': محصول یا انبارهای دستور ساخت در اطلاعات پایه یافت نشدند');break}
      if(!Array.isArray(o.materials)||o.materials.some(m=>!state.goods.some(g=>g.id===m.g)||!(num(m.q)>0))){stats.errors.push('ردیف '+fa(entry.row)+': ردیف‌های مواد مصرفی دستور ساخت معتبر نیستند');break}
      if(state.days[date]?.closed){stats.errors.push('ردیف '+fa(entry.row)+': تاریخ دستور ساخت بسته شده است');break}
      add(state.productionOrders||(state.productionOrders=[]),o,['orderNo']);
