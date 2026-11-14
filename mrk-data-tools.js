@@ -231,7 +231,7 @@
       const operationType = String(row && row[3] || '');
       const isOperation = recordType === 'operation' || recordType === 'archivedOperation';
       const opScope = isOperation ? classifyOperation(operationType) : '';
-      const dependencies = ['meta','party','good','source','warehouse','account'];
+      const dependencies = ['meta','party','good','source','warehouse','account','productionOrder','worker','bom'];
       if (scope === 'all' || scope === 'operations') return true;
       if (['cheques','receipts','issues','transfers','warehouseOps','inventory'].includes(scope)) {
         if (dependencies.includes(recordType) || recordType === 'archivedDay' || recordType === 'day' || (recordType === 'openingStock' && scope !== 'cheques')) return true;
