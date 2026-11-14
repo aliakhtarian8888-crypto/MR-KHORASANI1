@@ -1261,7 +1261,7 @@ function importProductionOrderRows(body){
    if(isClosed(normDate(order.date)))throw new Error('روز دستور ساخت بسته شده است');
    if(!warehouseList().some(w=>w.id===order.materialWarehouse)||!warehouseList().some(w=>w.id===order.finishedWarehouse))throw new Error('شناسه انبارهای دستور در این پایگاه داده وجود ندارد');
    if(order.materials.some(m=>!S.goods.some(g=>g.id===m.g)||!(num(m.q)>0)))throw new Error('مواد یا مقادیر مصرف دستور معتبر نیست');
-   if(ops.some(op=>op.prodOrderId!==order.id||!op.type||!normDate(op.date)))throw new Error('عملیات مرتبط با شناسه دستور یا تاریخ آن تطبیق ندارد');
+   if(ops.length<2||!ops.some(op=>op.type==='حواله مصرف مواد تولید')||!ops.some(op=>op.type==='رسید محصول تولیدی')||ops.some(op=>op.prodOrderId!==order.id||!op.type||!normDate(op.date)))throw new Error('عملیات مرتبط ناقص است؛ حواله مصرف مواد و رسید محصول باید همراه دستور وارد شوند');
    addDataExcelRow(records,'productionOrder',order,{id:order.id,date:order.date,code:order.orderNo,name:r[4]||'',status:order.status,amount:order.quantity});
    ops.forEach(op=>addDataExcelRow(records,'operation',op,{id:op.id,date:op.date,opType:op.type,code:op.no,name:op.desc,status:op.status,amount:opAmt(op)}));
   }catch(e){errors.push('ردیف '+fa(row)+': JSON دستور یا عملیات مرتبط معتبر نیست')}
