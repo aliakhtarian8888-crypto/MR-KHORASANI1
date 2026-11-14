@@ -215,3 +215,16 @@ test('builds a searchable cheque register for receivables and payables with sour
   assert.equal(rows[0].settlementDate,'1405/01/21');
   assert.equal(rows[0].amount,200);
 });
+
+test('stock-document exports retain production orders needed to rebuild manufacturing inventory movements', () => {
+  const { selectScopeRows } = require('../mrk-data-tools.js');
+  const headers=['نوع رکورد','شناسه','تاریخ','نوع عملیات','کد','نام / شرح','وضعیت','مقدار','JSON کامل رکورد'];
+  const rows=[headers,
+    ['productionOrder','po1','1405/01/01','','PO-1','ساخت','تکمیل',2,'{"id":"po1","orderNo":"PO-1"}'],
+    ['bom','bom1','','','','فرمول','','','{"id":"bom1"}'],
+    ['operation','op1','1405/01/01','حواله مصرف مواد تولید','','مصرف','فعال',5,'{"id":"op1","prodOrderId":"po1","type":"حواله مصرف مواد تولید"}']];
+  const selected=selectScopeRows(rows,'warehouseOps');
+  assert.ok(selected.some(r=>r[0]==='productionOrder'&&r[1]==='po1'));
+  assert.ok(selected.some(r=>r[0]==='bom'&&r[1]==='bom1'));
+  assert.ok(selected.some(r=>r[0]==='operation'&&r[1]==='op1'));
+});
