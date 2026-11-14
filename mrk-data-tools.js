@@ -84,5 +84,32 @@
       .map(x => ({ ...x, closeQty: x.openQty + x.inQty - x.outQty, closeValue: x.openValue + x.inValue - x.outValue }))
       .sort((a, b) => a.goodsId.localeCompare(b.goodsId) || a.warehouseId.localeCompare(b.warehouseId));
   }
-  return { latinDigits, normalizeHeader, mapImportRows, buildCardex };
+
+  function classifyOperation(value) {
+    const type = typeof value === 'string' ? value : String(value && value.type || '');
+    const chequeTypes = ['دریافت چک', 'پرداخت چک', 'وصول چک', 'برگشت چک', 'پاس چک پرداختی'];
+    if (chequeTypes.includes(type)) return 'cheques';
+    if (type === 'انتقال بین انبارها') return 'transfers';
+    if (['رسید کالا', 'رسید محصول تولیدی', 'خرید', 'برگشت از فروش'].includes(type)) return 'receipts';
+    if (['حواله خروج کالا', 'حواله مصرف مواد تولید', 'فروش', 'برگشت از خرید'].includes(type)) return 'issues';
+    if (['دریافت بابت فاکتور', 'پرداخت بابت فاکتور', 'دریافت خارج از فاکتور', 'پرداخت خارج از فاکتور'].includes(type)) return 'treasury';
+    return 'operations';
+  }
+
+  function uniqueByRecordId(records) {
+    const seen = new Set();
+    const result = [];
+    (Array.isArray(records) ? records : []).forEach(record => {
+      if (!record || typeof record !== 'object') return;
+      const key = record.id != null && String(record.id) !== ''
+        ? 'id:' + String(record.id)
+        : 'json:' + JSON.stringify(record);
+      if (seen.has(key)) return;
+      seen.add(key);
+      result.push(record);
+    });
+    return result;
+  }
+
+  return { latinDigits, normalizeHeader, mapImportRows, buildCardex, classifyOperation, uniqueByRecordId };
 });
