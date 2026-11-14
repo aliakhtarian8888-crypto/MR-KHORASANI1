@@ -177,3 +177,24 @@ test('searches cardex movements by party code as well as the party name', () => 
   assert.equal(result.movements.length,1);
   assert.equal(result.movements[0].partyName,'شرکت آلفا');
 });
+
+test('scoped inventory restore includes opening stock, current and archived stock-changing operations', () => {
+  const { selectScopeRows } = require('../mrk-data-tools.js');
+  const headers=['نوع رکورد','شناسه','تاریخ','نوع عملیات','کد','نام / شرح','وضعیت','مقدار','JSON کامل رکورد'];
+  const rows=[headers,
+    ['meta','m','','','','','','','{"fy":1405}'],
+    ['good','g','','','','','','','{"id":"g"}'],
+    ['warehouse','w','','','','','','','{"id":"w"}'],
+    ['openingStock','g|w','','','','','','','{"key":"g|w","q":4,"v":40}'],
+    ['operation','op1','1405/01/01','انتقال بین انبارها','','','','','{"id":"op1"}'],
+    ['archivedOperation','op2','1404/12/29','حواله خروج کالا','','','','','{"id":"op2","type":"حواله خروج کالا"}'],
+    ['day','1405/01/01','','','','','','','{"closed":true}'],
+    ['operation','cash','1405/01/01','دریافت خارج از فاکتور','','','','','{"id":"cash"}']];
+  const selected=selectScopeRows(rows,'inventory');
+  const ids=selected.slice(1).map(r=>r[1]);
+  assert.ok(ids.includes('g|w'));
+  assert.ok(ids.includes('op1'));
+  assert.ok(ids.includes('op2'));
+  assert.ok(ids.includes('1405/01/01'));
+  assert.ok(!ids.includes('cash'));
+});
