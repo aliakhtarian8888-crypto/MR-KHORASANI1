@@ -36,22 +36,24 @@
       const score = scoreRow(rows[i]);
       if (score > bestScore) { bestScore = score; headerIndex = i; }
     }
-    const hasHeader = headerIndex >= 0 && bestScore >= Math.min(2, expected.length);
-    const sourceHeaders = hasHeader ? rows[headerIndex].map(normalizeHeader) : [];
+    const minimumHeaderMatches = Math.max(1, Math.ceil(expected.length * 0.5));
+    const hasHeader = headerIndex >= 0 && bestScore >= minimumHeaderMatches;
+    const ambiguousHeader = headerIndex >= 0 && bestScore > 0 && !hasHeader;
+    const sourceHeaders = headerIndex >= 0 ? rows[headerIndex].map(normalizeHeader) : [];
     const mapping = expected.map(item => {
-      if (!hasHeader) return { header: item.header, sourceIndex: item.index, matched: false };
+      if (!hasHeader && !ambiguousHeader) return { header: item.header, sourceIndex: item.index, matched: false };
       const sourceIndex = sourceHeaders.findIndex(cell => item.names.includes(cell));
       return { header: item.header, sourceIndex, matched: sourceIndex >= 0 };
     });
     const dataStart = hasHeader ? headerIndex + 1 : 0;
-    const mappedRows = rows.slice(dataStart).map(row => mapping.map(m => m.sourceIndex >= 0 ? (row[m.sourceIndex] == null ? '' : row[m.sourceIndex]) : ''))
+    const mappedRows = ambiguousHeader ? [] : rows.slice(dataStart).map(row => mapping.map(m => m.sourceIndex >= 0 ? (row[m.sourceIndex] == null ? '' : row[m.sourceIndex]) : ''))
       .filter(row => row.some(cell => String(cell == null ? '' : cell).trim() !== ''));
     return {
       headerIndex,
       rows: mappedRows,
       mapping,
       matched: mapping.filter(m => m.matched).length,
-      mode: hasHeader ? 'header-mapped' : 'positional'
+      mode: ambiguousHeader ? 'ambiguous-header' : hasHeader ? 'header-mapped' : 'positional'
     };
   }
   function buildCardex(openingRows, movements, from, to, goodsFilter = '', warehouseFilter = '') {
