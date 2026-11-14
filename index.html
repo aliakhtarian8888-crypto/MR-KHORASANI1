@@ -1,4 +1,4 @@
-<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#081a35"><meta name="application-version" content="2.8.3-local-export-store"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="MR KHORASANI"><meta name="format-detection" content="telephone=no"><meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://klomsegarpfdkhkmoazy.supabase.co; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'"><title>MR, KHORASANI — حسابداری و مدیریت انبار</title><link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/svg+xml" href="icon.svg"><link rel="apple-touch-icon" href="icon-192.png"><style>:root{--p:#081a35;--p2:#12315d;--a:#d6ad55;--bg:#071326;--ink:#f4ead2;--mut:#b4c0d2;--card:#0d203d;--line:#314563;--bad:#f07870;--good:#d6ad55;--i1:#d6ad55;--i2:#d6ad55;--i3:#d6ad55;--i4:#d6ad55;--i5:#d6ad55;--i6:#d6ad55;--i7:#d6ad55;--i8:#d6ad55}
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#081a35"><meta name="application-version" content="2.9.0-excel-inventory-transfer"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="MR KHORASANI"><meta name="format-detection" content="telephone=no"><meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://klomsegarpfdkhkmoazy.supabase.co; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'"><title>MR, KHORASANI — حسابداری و مدیریت انبار</title><link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/svg+xml" href="icon.svg"><link rel="apple-touch-icon" href="icon-192.png"><style>:root{--p:#081a35;--p2:#12315d;--a:#d6ad55;--bg:#071326;--ink:#f4ead2;--mut:#b4c0d2;--card:#0d203d;--line:#314563;--bad:#f07870;--good:#d6ad55;--i1:#d6ad55;--i2:#d6ad55;--i3:#d6ad55;--i4:#d6ad55;--i5:#d6ad55;--i6:#d6ad55;--i7:#d6ad55;--i8:#d6ad55}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Noto Naskh Arabic","Noto Sans Arabic",Arial,sans-serif;font-size:15px;line-height:1.7;padding:0 0 calc(70px + env(safe-area-inset-bottom,0px));direction:rtl;padding-top:env(safe-area-inset-top,0px)}
 header{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;position:sticky;top:0;z-index:20;padding:8px 12px 0;border-bottom:3px solid var(--a)}
@@ -791,6 +791,13 @@ const localExportStore=window.MRKExportStore?.createBrowserStore(window.indexedD
 const exportRecordCache=new Map();
 function requestBlobDownload(name,blob){
  try{
+  if(window.AndroidBridge&&typeof window.AndroidBridge.saveFile==='function'){
+   const reader=new FileReader();
+   reader.onload=()=>{const data=String(reader.result||'').split(',')[1]||'';if(!data){toast('خواندن فایل خروجی ناموفق بود');return}window.AndroidBridge.saveFile(name,blob.type||'application/octet-stream',data)};
+   reader.onerror=()=>toast('آماده‌سازی فایل برای ذخیره در گوشی ناموفق بود');
+   reader.readAsDataURL(blob);
+   return true;
+  }
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download=name;a.rel='noopener';a.style.cssText='position:fixed;left:-10000px;top:0';
   document.body.appendChild(a);a.click();
@@ -830,12 +837,23 @@ function showExportReceipt(record,downloadRequested){
 }
 function saveBlob(name,blob,options){
  const opts=options||{};
- const downloadRequested=requestBlobDownload(name,blob);
+ let finalName=String(name||'MR-KHORASANI-export.bin');
+ if(opts.showNamePrompt!==false&&typeof window.prompt==='function'){
+  const dot=finalName.lastIndexOf('.'),ext=dot>0?finalName.slice(dot+1):'bin',base=dot>0?finalName.slice(0,dot):finalName;
+  try{
+   const chosen=window.prompt('نام فایل خروجی را تعیین کنید (پسوند .'+ext+' حفظ می‌شود):',base);
+   if(chosen&&chosen.trim()){
+    const clean=chosen.trim().replace(/[\\\\/:*?"<>|]/g,'-').replace(/[. ]+$/g,'').slice(0,140);
+    if(clean)finalName=/\\.[a-z0-9]{1,8}$/i.test(clean)?clean:clean+'.'+ext;
+   }
+  }catch(e){}
+ }
+ const downloadRequested=requestBlobDownload(finalName,blob);
  if(!localExportStore){
   toast(downloadRequested?'درخواست دریافت فایل به مرورگر ارسال شد؛ اما حافظهٔ محلی مرورگر در دسترس نیست.':'ذخیره فایل ممکن نشد؛ مرورگر از Blob یا IndexedDB پشتیبانی نمی‌کند.');
   return downloadRequested;
  }
- localExportStore.save(name,blob).then(async record=>{
+ localExportStore.save(finalName,blob).then(async record=>{
   exportRecordCache.set(record.id,record);
   try{if(navigator.storage?.persist)await navigator.storage.persist()}catch(e){}
   if(opts.showReceipt!==false){
@@ -916,7 +934,29 @@ function treasuryPage(){const id=UI.tr||'cs';const td=today(),f=flows(td,td);
  const tile=(t,v,i)=>`<div class="kcard"><div class="kt">${t}</div><div class="kv">${fmt(v)}</div></div>`;
  return `<div class="kgrid">${tile('موجودی صندوق',B.ab['1101']||0)}${tile('موجودی بانک‌ها',B.ab['1201']||0)}${tile('موجودی تنخواه',B.ab['1301']||0)}${tile('دریافت امروز',f.rcv)}${tile('پرداخت امروز',f.pay)}${tile('خالص امروز',f.rcv-f.pay)}</div>`+chips(TR_TABS,id,'trTab')+repBlock(id)}
 ACT.trTab=p=>{UI.tr=p;render()};
-function chequesPage(){const id=UI.ck||'ck_in';return `<div class="tgrid">${['دریافت چک','پرداخت چک','وصول چک','برگشت چک','پاس چک پرداختی'].filter(n=>can('ck')).map(n=>`<button class="tbtn" data-a="goType" data-p="${n}"><span>${TI[n].ic}</span>${n}</button>`).join('')}</div>`+chips(CK_TABS,id,'ckTab')+repBlock(id)}
+function chequeRegisterRows(){
+ const filters={query:UI.chequeRegQuery||'',direction:UI.chequeRegDirection||''};
+ return MRKDataTools.buildChequeRegisterRows(Object.values(B.chq||{}),S.parties,S.sources,filters);
+}
+function chequeRegisterPage(){
+ const rows=chequeRegisterRows();
+ const tableRows=rows.map(c=>[
+  c.direction,fa(c.chequeDate),c.partyName,fa(c.partyCode),fa(c.sayad),c.bank||'—',
+  c.sourceName||'—',fa(c.dueDate),c.settlementDate?fa(c.settlementDate):'—',
+  fmt(c.amount),c.status
+ ]);
+ return '<div class="card"><div class="ftitle">دفتر چک‌های دریافتنی و پرداختنی</div><div class="grid2"><div><label>جست‌وجوی شخص، کد یا شناسه صیادی</label><input id="chequeRegQuery" value="'+esc(UI.chequeRegQuery||'')+'" placeholder="نام شخص، کد شخص یا ۱۶ رقم صیادی"></div><div><label>نوع چک</label><select id="chequeRegDirection">'+sel([['','همه چک‌ها'],['in','دریافتنی'],['out','پرداختنی']],UI.chequeRegDirection||'')+'</select></div></div><div class="row mt"><button class="btn pri" data-a="chequeRegSearch">جست‌وجو</button><button class="btn" data-a="chequeRegExport">خروجی Excel گزارش چک‌ها</button><button class="btn" data-a="exportBaseData" data-p="cheques">خروجی کامل قابل بازگردانی</button></div><div class="hint">گزارش از وضعیت واقعی چک‌های ثبت‌شده و رویدادهای وصول، برگشت و پاس استخراج می‌شود. خروجی کامل JSON برای بازگردانی، و گزارش جدولی برای بررسی و ارائه استفاده می‌شود.</div></div><div class="card"><div class="ftitle">نتایج ('+fa(rows.length)+' چک)</div>'+tbl(['نوع','تاریخ ثبت','شخص','کد شخص','شناسه صیادی','بانک','منبع پرداخت','سررسید','تاریخ تسویه','مبلغ (ریال)','وضعیت'],tableRows)+'</div>';
+}
+ACT.chequeRegSearch=()=>{UI.chequeRegQuery=$('#chequeRegQuery')?.value||'';UI.chequeRegDirection=$('#chequeRegDirection')?.value||'';render()};
+ACT.chequeRegExport=()=>{
+ const rows=chequeRegisterRows();
+ const data=[['گزارش چک‌های دریافتنی و پرداختنی'],['نوع','شناسه رکورد','تاریخ ثبت','نام شخص','کد شخص','شناسه صیادی','بانک','منبع پرداخت','سررسید','تاریخ تسویه/وصول','مبلغ (ریال)','وضعیت']];
+ rows.forEach(c=>data.push([c.direction,c.id,c.chequeDate,c.partyName,c.partyCode,c.sayad,c.bank,c.sourceName,c.dueDate,c.settlementDate,c.amount,c.status]));
+ if(!rows.length)return toast('چکی برای خروجی با فیلترهای فعلی پیدا نشد.');
+ saveBlob(fname('گزارش چک‌های دریافتنی و پرداختنی','xlsx'),xlsxBlob(data,'گزارش چک‌ها'));
+ audit('خروجی','Excel – گزارش چک‌ها','چک‌های دریافتنی و پرداختنی','',rows.length);save();
+};
+function chequesPage(){const id=UI.ck||'ck_in';return excelTransferPanel('cheques')+excelImportTemplatePanel('chequeEntries')+chequeRegisterPage()+`<div class="tgrid">${['دریافت چک','پرداخت چک','وصول چک','برگشت چک','پاس چک پرداختی'].filter(n=>can('ck')).map(n=>`<button class="tbtn" data-a="goType" data-p="${n}"><span>${TI[n].ic}</span>${n}</button>`).join('')}</div>`+chips(CK_TABS,id,'ckTab')+repBlock(id)}
 ACT.ckTab=p=>{UI.ck=p;render()};
 function reportsPage(){const g=UI.rg||REPGROUPS[0][0],grp=REPGROUPS.find(x=>x[0]===g)||REPGROUPS[0];if(!REP[UI.rep]||!grp[1].includes(UI.rep))UI.rep=grp[1][0];
  return chips(REPGROUPS.map(x=>[x[0],x[0]]),grp[0],'rg')+chips(grp[1].map(k=>[k,REP[k].t]),UI.rep,'rp')+repBlock(UI.rep)}
@@ -924,7 +964,15 @@ ACT.rg=p=>{UI.rg=p;UI.rep=null;UI.rf={};render()};ACT.rp=p=>{UI.rep=p;render()};
 
 /* ---------- اشخاص، کالا، منابع، کدینگ ---------- */
 const hasClosed=()=>Object.values(S.days).some(d=>d.closed);
-function warehousePage(){return `<div class="card"><div class="ftitle">تعریف و مدیریت انبارها</div><div class="hint">هر انبار حساب معین مستقل موجودی کالا دارد. انبار دارای سابقه حذف نمی‌شود تا گردش و اسناد تاریخی مخدوش نشود.</div>${warehouseList().map(w=>`<div class="orow"><div><b>${esc(w.name)}</b><div class="hint">شناسه: ${esc(w.id)} — حساب موجودی: ${fa(w.acc)}</div></div><div class="acts"><button class="btn sm" data-a="editWarehouse" data-p="${esc(w.id)}">ویرایش نام</button></div></div>`).join('')}</div><div class="card"><div class="ftitle">افزودن انبار جدید</div><label>نام انبار</label><input id="wh_name" placeholder="مثلاً انبار مواد اولیه"><button class="btn pri wide" data-a="saveWarehouse">ثبت انبار و ایجاد حساب موجودی</button></div>`}
+function excelImportTemplatePanel(inputKind){
+ const t=templateSpec(inputKind);
+ return '<div class="card"><div class="ftitle">ورود ردیفی Excel — '+esc(t.n)+'</div><div class="row"><button class="btn" data-a="tpl" data-p="'+inputKind+'">📄 قالب ورود</button><button class="btn" data-a="tplCopy" data-p="'+inputKind+'">📋 کپی قالب</button><button class="btn" data-a="pasteImp" data-p="'+inputKind+'">📥 چسباندن</button><label class="btn filebtn">📂 انتخاب فایل<input type="file" data-imp="'+inputKind+'" accept=".xlsx,.xls,.csv,.tsv,.txt,*/*"></label></div><div class="hint">این قالب برای ثبت عملیات جدید است؛ برای بازگردانی سندهای موجود از خروجی کامل بخش استفاده کنید.</div></div>';
+}
+function excelTransferPanel(inputKind,exportKind){
+ const t=templateSpec(inputKind),out=exportKind||inputKind;
+ return '<div class="card"><div class="ftitle">ورود و خروج Excel — '+esc(t.n)+'</div><div class="row"><button class="btn" data-a="exportBaseData" data-p="'+out+'">⬇️ خروجی اطلاعات موجود</button><button class="btn" data-a="tpl" data-p="'+inputKind+'">📄 قالب ورود</button><button class="btn" data-a="tplCopy" data-p="'+inputKind+'">📋 کپی قالب</button><button class="btn" data-a="pasteImp" data-p="'+inputKind+'">📥 چسباندن</button><label class="btn filebtn">📂 ورود فایل Excel<input type="file" data-imp="'+inputKind+'" accept=".xlsx,.xls,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/octet-stream,*/*"></label></div><div class="hint">سرستون‌ها شناسایی و در صورت جابه‌جایی مرتب می‌شوند؛ ثبت نهایی از کنترل‌های عملیاتی و حسابداری عبور می‌کند.</div></div>';
+}
+function warehousePage(){return excelTransferPanel('warehouses')+`<div class="card"><div class="ftitle">تعریف و مدیریت انبارها</div><div class="hint">هر انبار حساب معین مستقل موجودی کالا دارد. انبار دارای سابقه حذف نمی‌شود تا گردش و اسناد تاریخی مخدوش نشود.</div>${warehouseList().map(w=>`<div class="orow"><div><b>${esc(w.name)}</b><div class="hint">شناسه: ${esc(w.id)} — حساب موجودی: ${fa(w.acc)}</div></div><div class="acts"><button class="btn sm" data-a="editWarehouse" data-p="${esc(w.id)}">ویرایش نام</button></div></div>`).join('')}</div><div class="card"><div class="ftitle">افزودن انبار جدید</div><label>نام انبار</label><input id="wh_name" placeholder="مثلاً انبار مواد اولیه"><button class="btn pri wide" data-a="saveWarehouse">ثبت انبار و ایجاد حساب موجودی</button></div>`}
 ACT.editWarehouse=id=>{if(!can('wh'))return toast('دسترسی انبارداری ندارید');const w=warehouseList().find(x=>x.id===String(id));if(!w)return;const n=prompt('نام جدید انبار',w.name);if(n===null)return;if(!n.trim())return toast('نام انبار الزامی است');if(commit(c=>{const x=c.warehouses.find(z=>String(z.id)===String(id));x.name=n.trim();const a=c.accounts.find(a=>a.code===x.acc);if(a)a.name='موجودی کالا – '+x.name},'ویرایش','انبار',id,w.name,n.trim())){index(B);render();toast('نام انبار اصلاح شد')}};
 ACT.saveWarehouse=()=>{if(!can('wh'))return toast('دسترسی انبارداری ندارید');const name=($('#wh_name')?.value||'').trim();if(!name)return toast('نام انبار را وارد کنید');if(warehouseList().some(w=>w.name.trim()===name))return toast('این نام انبار تکراری است');if(commit(c=>{const used=warehouseList(c).map(w=>+w.acc||0);let code=Math.max(1602,...used)+1;while(c.accounts.some(a=>a.code===String(code)))code++;const id=mkid(c,'w');c.warehouses=c.warehouses||[];c.warehouses.push({id,name,acc:String(code)});c.accounts.push({code:String(code),name:'موجودی کالا – '+name})},'ایجاد','انبار',name,'','انبار جدید')){index(B);render();toast('انبار و حساب معین موجودی آن ایجاد شد')}};
 function basePage(){const t=UI.base;let h=chips([['parties','👥 اشخاص'],['goods','👕 کالاها'],['warehouses','🏬 تعریف انبارها'],['stock','📊 موجودی انبارها'],['sources','🏦 منابع مالی'],['coa','📚 کدینگ حساب‌ها']].filter(([k])=>k!=='warehouses'||can('wh')),t,'bt');
@@ -932,10 +980,80 @@ function basePage(){const t=UI.base;let h=chips([['parties','👥 اشخاص'],[
  if(t==='parties'){const q=UI.q||'';h+=tplBar('parties')+`<div class="card"><input placeholder="جستجوی نام یا کد" data-a="" id="qBox" value="${esc(q)}" oninput="UI.q=this.value;partyList()"><div id="plist">${partyListHtml()}</div></div>`+partyForm()}
  else if(t==='goods')h+=tplBar('goods')+`<div class="card" id="glist">${goodListHtml()}</div>`+goodForm();
  else if(t==='warehouses')h+=can('wh')?warehousePage():'<div class="card warn">دسترسی مدیریت انبار ندارید.</div>';
- else if(t==='stock')h+=repBlock('iv');
+ else if(t==='stock')h+=repBlock('iv')+excelTransferPanel('warehouseOps')+excelImportTemplatePanel('warehouseOpsInput')+cardexPage();
  else if(t==='sources')h+=tplBar('sources')+`<div class="card"><div class="hint">مانده اول دوره هر صندوق و بانک در ابتدا صفر است و تا پیش از بستن نخستین روز قابل ویرایش است؛ پس از آن اصلاح فقط با سند اصلاحی ممکن است.</div>${S.sources.map(s=>`<div class="orow" style="flex-wrap:wrap"><div><b>${esc(s.name)}</b><div class="hint">${s.kind} — موجودی فعلی: ${balTxt(B.sb[s.id]||0)}</div></div><div class="acts" style="flex:1;min-width:210px"><input class="money" inputmode="numeric" id="so_${s.id}" placeholder="مانده اول دوره" value="${s.open?money(s.open):''}" ${hasClosed()?'disabled':''}><button class="btn sm" data-a="saveSrcOpen" data-p="${s.id}" ${hasClosed()?'disabled':''}>ذخیره مانده</button><button class="btn sm" data-a="editSrc" data-p="${s.id}">ویرایش</button></div></div>`).join('')}</div>`+srcForm();
  else h+=tplBar('coa')+coaHtml();
  return h}
+function cardexModel(filters){
+ const f=filters||{},openingRows=[];
+ if(S.carry){
+  Object.entries(S.invCarry||{}).forEach(([key,value])=>{
+   const parts=String(key).split('|');if(parts.length!==2)return;
+   openingRows.push({g:parts[0],w:parts[1],q:num(value.q),v:num(value.v)});
+  });
+ }else{
+  S.goods.forEach(g=>warehouseList().forEach(w=>{
+   const opening=w.id==='1'?{q:g.q1,c:g.c1}:w.id==='2'?{q:g.q2,c:g.c2}:((g.opening||{})[w.id]||{});
+   const q=num(opening.q),v=Math.round(q*num(opening.c));
+   if(q||v)openingRows.push({g:g.id,w:w.id,q,v});
+  }));
+ }
+ const movements=[];
+ S.ops.filter(o=>o.status==='active').forEach(o=>{
+  const movementData=B.opd[o.id];if(!movementData||!Array.isArray(movementData.moves))return;
+  const party=S.parties.find(p=>p.id===o.party);
+  movementData.moves.forEach((m,index)=>{
+   if(!m.g||!m.w||(!num(m.q)&&!num(m.v)))return;
+   movements.push({
+    id:o.id+':'+index, date:o.date, no:o.inv||o.no, type:o.type,
+    description:o.desc||'', partyId:o.party||'', partyName:party?.name||'', partyCode:party?.code||'',
+    g:m.g,w:m.w,q:num(m.q),v:num(m.v)
+   });
+  });
+ });
+ return MRKDataTools.buildCardexLedger({
+  goods:S.goods,warehouses:warehouseList(),openingRows,movements,
+  filters:{from:normDate(f.from)||S.fy+'/01/01',to:normDate(f.to)||today(),
+   goodsQuery:f.goodsQuery||'',partyQuery:f.partyQuery||'',warehouseId:f.warehouseId||''}
+ });
+}
+function cardexCurrentFilters(){
+ const d={from:S.fy+'/01/01',to:today(),goodsQuery:'',partyQuery:'',warehouseId:'',...(UI.cardexFilters||{})};
+ const read=id=>$('#'+id)?.value;
+ return {from:normDate(read('cardexFrom')||d.from)||d.from,to:normDate(read('cardexTo')||d.to)||d.to,
+  goodsQuery:String(read('cardexGoodsSearch')??d.goodsQuery).trim(),
+  partyQuery:String(read('cardexPartySearch')??d.partyQuery).trim(),
+  warehouseId:String(read('cardexWarehouse')??d.warehouseId)};
+}
+function cardexPage(){
+ const f={from:S.fy+'/01/01',to:today(),goodsQuery:'',partyQuery:'',warehouseId:'',...(UI.cardexFilters||{})};
+ 
+ const model=cardexModel(f),opening=new Map(model.opening.map(x=>[x.goodsId+'|'+x.warehouseId,x]));
+ const summaries=model.closing.map(x=>{
+  const o=opening.get(x.goodsId+'|'+x.warehouseId)||{};
+  return [x.code,x.goodsName,x.warehouseName,fmtq(o.quantity||0),fmt(o.value||0),fmtq(x.quantity),fmt(x.value)];
+ });
+ const movementRows=model.movements.map(x=>[
+  fa(x.date),fa(x.no||''),x.type,x.code,x.goodsName,x.partyName||'—',x.warehouseName,
+  fmtq(x.inQuantity),fmtq(x.outQuantity),fmt(x.inValue),fmt(x.outValue),
+  fmtq(x.balanceQty),fmt(x.balanceValue)
+ ]);
+ const personNote=f.partyQuery?'<div class="hint">جست‌وجوی شخص فقط اسناد مرتبط با همان شخص را محدود می‌کند؛ مانده اول و پایان، موجودی واقعی کالا در کل انبار انتخاب‌شده است و به شخص تخصیص داده نمی‌شود.</div>':'';
+ return '<div class="card"><div class="ftitle">کارتکس کالا و انبارها</div><div class="grid2"><div><label>جست‌وجوی کالا (کد یا نام)</label><input id="cardexGoodsSearch" value="'+esc(f.goodsQuery||'')+'" placeholder="مثلاً کد 1101 یا آرد"></div><div><label>جست‌وجوی شخص (نام یا کد)</label><input id="cardexPartySearch" value="'+esc(f.partyQuery||'')+'" placeholder="نام مشتری یا تأمین‌کننده"></div><div><label>از تاریخ</label><input id="cardexFrom" value="'+esc(fa(f.from))+'" placeholder="'+fa('1405/01/01')+'"></div><div><label>تا تاریخ</label><input id="cardexTo" value="'+esc(fa(f.to))+'" placeholder="'+fa('1405/12/29')+'"></div><div><label>انبار</label><select id="cardexWarehouse">'+sel([['','همه انبارها'],...warehouseOptions()],f.warehouseId)+'</select></div></div><div class="row mt"><button class="btn pri" data-a="cardexSearch">جست‌وجو و نمایش کارتکس</button><button class="btn" data-a="cardexExport">خروجی اکسل کارتکس</button><button class="btn" data-a="exportExcelScope" data-p="inventory">خروجی اکسل موجودی و گردش اسناد</button></div>'+personNote+'</div>'+
+ '<div class="card"><div class="ftitle">مانده اول و پایان دوره بر اساس انبار</div>'+tbl(['کد کالا','نام کالا','انبار','تعداد اول دوره','ارزش اول دوره (ریال)','تعداد پایان دوره','ارزش پایان دوره (ریال)'],summaries)+'</div>'+
+ '<div class="card"><div class="ftitle">ریزگردش کارتکس ('+fa(model.movements.length)+' ردیف)</div>'+tbl(['تاریخ','شماره سند','نوع عملیات','کد کالا','نام کالا','شخص مرتبط','انبار','ورودی','خروجی','ارزش ورودی','ارزش خروجی','مانده پس از سند','ارزش مانده'],movementRows)+'</div>';
+}
+ACT.cardexSearch=()=>{UI.cardexFilters=cardexCurrentFilters();render()};
+ACT.cardexExport=()=>{
+ const f=cardexCurrentFilters(),model=cardexModel(f);
+ const opening=new Map(model.opening.map(x=>[x.goodsId+'|'+x.warehouseId,x]));
+ const rows=[['گزارش کارتکس کالا','از '+f.from,'تا '+f.to,'شخص: '+(f.partyQuery||'همه'),'کالا: '+(f.goodsQuery||'همه'),'انبار: '+(f.warehouseId||'همه')],['کد کالا','نام کالا','انبار','تعداد اول دوره','ارزش اول دوره','تعداد پایان دوره','ارزش پایان دوره']];
+ model.closing.forEach(x=>{const o=opening.get(x.goodsId+'|'+x.warehouseId)||{};rows.push([x.code,x.goodsName,x.warehouseName,num(o.quantity),num(o.value),num(x.quantity),num(x.value)])});
+ rows.push([]);rows.push(['ریزگردش']);rows.push(['شناسه سند','تاریخ','شماره سند','نوع عملیات','کد کالا','نام کالا','شخص مرتبط','انبار','ورودی','خروجی','ارزش ورودی','ارزش خروجی','مانده پس از سند','ارزش مانده']);
+ model.movements.forEach(x=>rows.push([x.id,x.date,x.no||'',x.type,x.code,x.goodsName,x.partyName,x.warehouseName,num(x.inQuantity),num(x.outQuantity),num(x.inValue),num(x.outValue),num(x.balanceQty),num(x.balanceValue)]));
+ saveBlob(fname('کارتکس کالا','xlsx'),xlsxBlob(rows,'کارتکس کالا'));
+ audit('خروجی','Excel کارتکس کالا',f.goodsQuery||'همه کالاها','',model.movements.length);save();
+};
 ACT.bt=p=>{UI.base=p;UI.editB=null;UI.q='';render()};
 const partyListHtml=()=>{const q=(UI.q||'').trim();return S.parties.filter(p=>!q||p.name.includes(q)||String(p.code||'').includes(en(q))).map(p=>`<div class="orow"><div><b>${esc(p.name)}</b> <span class="badge">${p.kind}</span><div class="hint">کد ${fa(p.code||'')} — ${fa(p.phone||'')} — مانده: ${balTxt(B.pb[p.id]||0)}</div></div><div class="acts"><button class="btn sm" data-a="editParty" data-p="${p.id}">ویرایش</button>${(B.pb[p.id]||0)===0&&!B.docs.some(d=>d.lines.some(l=>l.taf===p.id))?`<button class="btn sm dng" data-a="delParty" data-p="${p.id}">حذف</button>`:''}</div></div>`).join('')||'<div class="hint">شخصی ثبت نشده است.</div>'};
 function partyList(){const e=$('#plist');if(e)e.innerHTML=partyListHtml()}
@@ -960,6 +1078,7 @@ ACT.saveSrc=()=>{if(!can('bs'))return toast('دسترسی ندارید');const n
 function productionPage(){
  if(!can('prod'))return '<div class="card warn">دسترسی مدیریت تولید ندارید.</div>';
  const tabs=[['orders','🧾 دستور ساخت'],['bom','🧩 فرمول ساخت'],['workers','👷 کارگران تولید'],['report','📊 گزارش بهای تولید']];let h=chips(tabs,UI.prodTab||'orders','prodTab');
+ if(UI.prodTab==='workers')h+=excelTransferPanel('workers');
  const transferKind=UI.prodTab==='bom'?'boms':UI.prodTab==='orders'?'productionOrders':'';
  if(transferKind){
   const transferTitle=transferKind==='boms'?'فرمول‌های ساخت':'دستورهای ساخت و اسناد مرتبط';
@@ -1027,7 +1146,18 @@ const TPL={
  exp:{n:'هزینه‌ها',h:['تاریخ (۱۴۰۵/۰۱/۰۱)','کد حساب هزینه','نام منبع مالی (خالی = نسیه)','نام شخص (برای نسیه)','مبلغ','شرح'],s:['نمونه','6201','صندوق مرکزی','',2000000,'اجارهٔ ماه']},
  inv:{n:'فاکتورها',h:['تاریخ (۱۴۰۵/۰۱/۰۱)','نوع (فروش/خرید)','نام شخص','انبار (۱ یا ۲)','نام کالا','تعداد','قیمت واحد','تخفیف (ریال)','هزینه حمل','نام منبع پرداخت','مبلغ پرداختی','شرح'],s:['نمونه','فروش','شرکت نمونه',1,'پیراهن مردانه',2,900000,0,0,'صندوق مرکزی',500000,'']},
  boms:{n:'فرمول ساخت (BOM) – هر ماده یک ردیف',h:['کد محصول','نام محصول','مقدار خروجی هر بچ','واحد محصول','شرح فرمول','کد ماده اولیه','نام ماده اولیه','مقدار مصرف در هر بچ','واحد ماده اولیه','شناسه فرمول','شناسه محصول','شناسه ماده اولیه'],s:['نمونه','کیک شکلاتی',1,'عدد','فرمول استاندارد','1101-001','آرد گندم',0.22,'کیلوگرم','','','']},
- productionOrders:{n:'دستورهای ساخت – گردش کامل',h:['شناسه دستور','شماره دستور','تاریخ','کد محصول','نام محصول','مقدار تولید','واحد','انبار مصرف','انبار محصول','شرح','وضعیت','اطلاعات کامل دستور (JSON)','عملیات مرتبط (JSON)'],s:['نمونه','تولید-0001','۱۴۰۵/۰۱/۰۱','FG-001','محصول نمونه',100,'عدد','انبار مواد','انبار محصول','شرح دستور','تکمیل‌شده','{}','[]']}};
+ productionOrders:{n:'دستورهای ساخت – گردش کامل',h:['شناسه دستور','شماره دستور','تاریخ','کد محصول','نام محصول','مقدار تولید','واحد','انبار مصرف','انبار محصول','شرح','وضعیت','اطلاعات کامل دستور (JSON)','عملیات مرتبط (JSON)'],s:['نمونه','تولید-0001','۱۴۰۵/۰۱/۰۱','FG-001','محصول نمونه',100,'عدد','انبار مواد','انبار محصول','شرح دستور','تکمیل‌شده','{}','[]']},
+ warehouses:{n:'فهرست انبارها',h:['شناسه انبار','نام انبار','کد حساب موجودی'],s:['','انبار مواد اولیه','1602']},
+ workers:{n:'کارگران تولید',h:['شناسه کارگر','نام','دریافتی ماهانه (ریال)','ساعات موظفی ماهانه','فعال (بله/خیر)'],s:['','کارگر نمونه',0,192,'بله']},
+ chequeEntries:{n:'ورود چک‌های دریافتنی و پرداختنی',h:['تاریخ','نوع عملیات (دریافت چک/پرداخت چک)','نام شخص','شناسه صیادی ۱۶ رقمی','بانک','تاریخ سررسید','مبلغ (ریال)','نام منبع پرداخت (برای چک پرداختی)','شرح'],s:['۱۴۰۵/۰۱/۰۱','دریافت چک','شرکت نمونه','1234567890123456','بانک نمونه','۱۴۰۵/۰۲/۰۱',1000000,'','چک نمونه']},
+ warehouseOpsInput:{n:'ورود جدید رسید، حواله و انتقال بین انبارها',h:['شناسه گروه سند','تاریخ','نوع عملیات (رسید کالا/حواله خروج کالا/انتقال بین انبارها)','کد کالا','نام کالا','تعداد','بهای واحد (برای رسید)','انبار مبدأ / انبار رسید','انبار مقصد (برای انتقال)','حساب بدهکار (برای حواله)','شرح'],s:['DOC-001','۱۴۰۵/۰۱/۰۱','رسید کالا','1101-001','مواد نمونه',10,50000,'انبار مواد','','','رسید نمونه']},
+ operations:{n:'ورود و بازگردانی تمام عملیات – JSON کامل',h:['نوع رکورد','شناسه','تاریخ','نوع عملیات','کد/شماره','نام / شرح','وضعیت','مبلغ/تعداد','JSON کامل رکورد'],s:['operation','شناسه موجود','۱۴۰۵/۰۱/۰۱','سند دستی','1','شرح عملیات','فعال',0,'{}']},
+ cheques:{n:'بازگردانی گردش چک‌ها – JSON کامل',h:['نوع رکورد','شناسه','تاریخ','نوع عملیات','کد/شماره','نام / شرح','وضعیت','مبلغ/تعداد','JSON کامل رکورد'],s:['operation','شناسه موجود','۱۴۰۵/۰۱/۰۱','دریافت چک','1','چک نمونه','در جریان',1000000,'{}']},
+ receipts:{n:'بازگردانی رسیدهای کالا – JSON کامل',h:['نوع رکورد','شناسه','تاریخ','نوع عملیات','کد/شماره','نام / شرح','وضعیت','مبلغ/تعداد','JSON کامل رکورد'],s:['operation','شناسه موجود','۱۴۰۵/۰۱/۰۱','رسید کالا','1','رسید نمونه','فعال',10,'{}']},
+ issues:{n:'بازگردانی حواله‌های کالا – JSON کامل',h:['نوع رکورد','شناسه','تاریخ','نوع عملیات','کد/شماره','نام / شرح','وضعیت','مبلغ/تعداد','JSON کامل رکورد'],s:['operation','شناسه موجود','۱۴۰۵/۰۱/۰۱','حواله خروج کالا','1','حواله نمونه','فعال',10,'{}']},
+ transfers:{n:'بازگردانی انتقال بین انبارها – JSON کامل',h:['نوع رکورد','شناسه','تاریخ','نوع عملیات','کد/شماره','نام / شرح','وضعیت','مبلغ/تعداد','JSON کامل رکورد'],s:['operation','شناسه موجود','۱۴۰۵/۰۱/۰۱','انتقال بین انبارها','1','انتقال نمونه','فعال',10,'{}']},
+ warehouseOps:{n:'بازگردانی رسید، حواله و انتقال انبار – JSON کامل',h:['نوع رکورد','شناسه','تاریخ','نوع عملیات','کد/شماره','نام / شرح','وضعیت','مبلغ/تعداد','JSON کامل رکورد'],s:['operation','شناسه موجود','۱۴۰۵/۰۱/۰۱','رسید کالا','1','رسید نمونه','فعال',10,'{}']},
+ inventory:{n:'بازگردانی موجودی و گردش انبار – JSON کامل',h:['نوع رکورد','شناسه','تاریخ','نوع عملیات','کد/شماره','نام / شرح','وضعیت','مبلغ/تعداد','JSON کامل رکورد'],s:['operation','شناسه موجود','۱۴۰۵/۰۱/۰۱','رسید کالا','1','گردش موجودی','فعال',10,'{}']}};
 function templateSpec(k){
  if(k!=='goods')return TPL[k];
  const whs=warehouseList(),h=['کد','نام کالا','واحد','نوع کالا','قیمت فروش'];
@@ -1039,6 +1169,10 @@ function templateSpec(k){
 }
 function templateAliases(k,spec){
  const a={};
+ if(k==='warehouses')return {'شناسه انبار':['شناسه','کد انبار','warehouse id'],'نام انبار':['نام','عنوان انبار'],'کد حساب موجودی':['حساب موجودی','کد حساب','warehouse account']};
+ if(k==='workers')return {'شناسه کارگر':['شناسه','کد کارگر','worker id'],'نام':['نام کارگر'],'دریافتی ماهانه (ریال)':['حقوق ماهانه','کل دریافتی ماهانه'],'ساعات موظفی ماهانه':['ساعات موظفی','ساعات کار ماهانه'],'فعال (بله/خیر)':['وضعیت','فعال']};
+ if(k==='chequeEntries')return {'تاریخ':['تاریخ سند'],'نوع عملیات (دریافت چک/پرداخت چک)':['نوع چک','عملیات'],'نام شخص':['شخص','نام مشتری/تأمین‌کننده'],'شناسه صیادی ۱۶ رقمی':['شناسه صیادی','شماره صیادی'],'بانک':['بانک صادرکننده'],'تاریخ سررسید':['سررسید'],'مبلغ (ریال)':['مبلغ'],'نام منبع پرداخت (برای چک پرداختی)':['منبع پرداخت','صندوق/بانک'],'شرح':['توضیحات']};
+ if(k==='warehouseOpsInput')return {'شناسه گروه سند':['شناسه سند گروهی','شماره سند','شماره گروه'],'تاریخ':['تاریخ سند'],'نوع عملیات (رسید کالا/حواله خروج کالا/انتقال بین انبارها)':['نوع سند','نوع عملیات'],'کد کالا':['کد محصول'],'نام کالا':['شرح کالا'],'تعداد':['مقدار','تعداد کالا'],'بهای واحد (برای رسید)':['فی','بهای واحد','نرخ خرید'],'انبار مبدأ / انبار رسید':['انبار','انبار مبدأ','انبار رسید'],'انبار مقصد (برای انتقال)':['انبار مقصد'],'حساب بدهکار (برای حواله)':['حساب هزینه','حساب بدهکار'],'شرح':['توضیحات']};
  if(k==='boms'){
   return {'کد محصول':['کد کالا','کد محصول ساخته‌شده','کد محصول نهایی'],'نام محصول':['محصول','نام محصول ساخته‌شده','نام کالای ساخته‌شده'],'مقدار خروجی هر بچ':['مقدار خروجی','تعداد خروجی هر بچ','مقدار بچ'],'واحد محصول':['واحد خروجی','واحد محصول نهایی'],'شرح فرمول':['توضیحات فرمول','شرح'],'کد ماده اولیه':['کد مواد','کد ماده','کد مصرفی'],'نام ماده اولیه':['ماده اولیه','نام مواد','نام ماده','نام کالای مصرفی'],'مقدار مصرف در هر بچ':['مقدار مصرف','مقدار استاندارد','مصرف هر بچ'],'واحد ماده اولیه':['واحد مصرف','واحد ماده'],'شناسه فرمول':['شناسه BOM','BOM ID'],'شناسه محصول':['Product ID'],'شناسه ماده اولیه':['Material ID']};
  }
@@ -1075,7 +1209,21 @@ function templateAliases(k,spec){
 ACT.tpl=k=>{const t=templateSpec(k);saveBlob(fname('قالب اکسل '+t.n,'xlsx'),xlsxBlob([t.h,t.s],t.n));};
 
 async function readTable(file){const n=(file.name||'').toLowerCase();if(/\.(csv|tsv|txt)$/.test(n))return parseTable(await file.text());return await readXlsx(await file.arrayBuffer())}
+function importOperationalScope(kind,inputRows){
+ if(kind==='cardex')return 'کارتکس گزارش محاسباتی است و نباید به‌عنوان سند موجودی وارد شود؛ برای بازیابی موجودی از خروجی رسید، حواله، انتقال یا خروجی یکپارچه استفاده کنید.';
+ const mapped=MRKDataTools.mapImportRows(inputRows,DATA_EXCEL_HEADERS,DATA_EXCEL_ALIASES);
+ if(mapped.mode==='ambiguous-header')return 'سرستون‌های فایل ناقص یا مبهم است؛ فایل از نوع دیگری است یا ستون JSON کامل حذف شده است.';
+ if(mapped.mode==='empty'||!mapped.rows.length)return 'ردیف اطلاعاتی پیدا نشد.';
+ if(mapped.matched<2)return 'ساختار خروجی یکپارچه MR شناسایی نشد.';
+ const scoped=MRKDataTools.selectScopeRows([DATA_EXCEL_HEADERS,...mapped.rows],kind);
+ if(scoped.length<=1)return 'رکوردی برای بازگردانی در این بخش پیدا نشد.';
+ const bad=[];
+ scoped.slice(1).forEach((r,i)=>{if(!String(r[8]||'').trim())bad.push('ردیف '+fa(i+2)+': JSON کامل رکورد خالی است');else{try{JSON.parse(String(r[8]))}catch(e){bad.push('ردیف '+fa(i+2)+': JSON معتبر نیست')}}});
+ if(bad.length)return bad.slice(0,5).join(' | ');
+ return runUnifiedImport(scoped);
+}
 function runImport(k,rows){
+ if(['operations','cheques','receipts','issues','transfers','warehouseOps','inventory','cardex'].includes(k))return importOperationalScope(k,rows);
  const t=templateSpec(k);if(!t)return 'نوع اطلاعات انتخاب‌شده معتبر نیست';
  const aliases=templateAliases(k,t);
  let mapped=null,legacyGoods=false;
@@ -1262,13 +1410,38 @@ function runUnifiedImport(inputRows){
  return '';
 }
 function dataCenterPage(){
- const options=[['unified','خروجی/ورودی یکپارچه MR (تمام انواع عملیات)'],['parties','اشخاص'],['goods','کالاها و موجودی اول دوره تمام انبارها'],['sources','صندوق و بانک و منابع مالی'],['coa','کدینگ حساب‌ها'],['rp','دریافت و پرداخت خارج از فاکتور'],['exp','هزینه‌ها'],['inv','فاکتورهای فروش و خرید'],['boms','فرمول‌های ساخت (BOM)'],['productionOrders','دستورهای ساخت و اسناد مرتبط']];
- return '<div class="card"><div class="ftitle">مرکز یکپارچه ورود و خروج اطلاعات</div><div class="hint">خروجی یکپارچه شامل اطلاعات پایه، گردش‌های ثبت‌شده، جزئیات کامل عملیات، اسناد حذف‌شده، گردش چک‌ها، حواله و انتقال انبار، سند دستی، استهلاک، تولید و اطلاعات آرشیوی است. برای بازگردانی دقیق از همین ساختار استفاده کنید.</div><div class="row mt"><button class="btn pri" data-a="dataExcelExport">⬇️ دانلود اکسل یکپارچه اطلاعات موجود</button><button class="btn" data-a="bakDl">💾 پشتیبان کامل JSON</button><button class="btn" data-a="savedExports">🗂️ فایل‌های خروجی ذخیره‌شده</button></div><div class="hint">اکسل، اطلاعات واقعی موجود را صادر می‌کند و قالب خالی نیست. پشتیبان JSON برای بازیابی کامل و جایگزینی پایگاه کاری، از جمله آرشیو سال‌های گذشته، مسیر مطمئن‌تر است.</div></div>'+
- '<div class="card"><div class="ftitle">ورود اطلاعات از Excel / Google Sheets</div><label>نوع فایل یا اطلاعات</label><select id="dataImportKind" class="wide">'+sel(options,UI.dataImportKind||'unified')+'</select><div class="row mt"><button class="btn pri" data-a="dataPaste">📋 چسباندن از اکسل</button><label class="btn filebtn">📂 انتخاب فایل Excel<input type="file" data-imp="data" accept=".xlsx,.xls,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/octet-stream,*/*"></label></div><div class="hint">در ورود عادی، عنوان ستون‌ها شناسایی و جابه‌جایی ستون‌ها اصلاح می‌شود. در ورود یکپارچه MR، جزئیات JSON هر رکورد خوانده می‌شود تا انواع پیچیده عملیات نیز بدون حذف اقلام و پرداخت‌ها بازیابی شوند. رکوردهای تکراری با شناسه یا کد شناسایی و دوباره ثبت نمی‌شوند.</div></div>'+
- '<div class="card"><div class="ftitle">قالب‌های استاندارد ورود و خروج</div>'+Object.keys(TPL).map(k=>'<div class="orow"><div><b>'+esc(TPL[k].n)+'</b><div class="hint">'+esc(TPL[k].h.slice(0,4).join('، '))+'</div></div><div class="acts"><button class="btn sm" data-a="tpl" data-p="'+k+'">دانلود قالب</button><button class="btn sm" data-a="exportBaseData" data-p="'+k+'">خروجی اطلاعات موجود</button><button class="btn sm" data-a="pasteImp" data-p="'+k+'">چسباندن</button></div></div>').join('')+'</div>'+
- '<div class="card"><div class="ftitle">قواعد ایمنی ورود گروهی</div><ul class="hint"><li>ابتدا فایل را در محیط آزمایشی وارد و گزارش‌های مربوط را کنترل کنید.</li><li>مبالغ و تعدادها باید عددی و تاریخ‌ها در سال مالی فعال باشند.</li><li>فاکتور تکراری یا عملیات مربوط به روز بسته‌شده بدون نسخه ثابت وارد نمی‌شود.</li><li>ورود از فایل، عملیات را از مسیر موتور حسابداری عبور می‌دهد؛ گزارش‌ها مستقیماً قابل ویرایش نیستند.</li><li>دسترسی ورود و خروج تابع مجوز «پشتیبان و خروجی» کاربر است.</li></ul></div>';
+ const options=[
+  ['unified','خروجی/ورودی یکپارچه MR (تمام اطلاعات)'],['operations','تمام عملیات و اسناد حسابداری'],['parties','اشخاص'],
+  ['goods','کالاها و موجودی اول دوره تمام انبارها'],['inventory','اطلاعات موجودی و گردش کالا و انبارها'],
+  ['warehouses','انبارها'],['sources','صندوق و بانک و منابع مالی'],['coa','کدینگ حساب‌ها'],['workers','کارگران تولید'],
+  ['rp','دریافت و پرداخت خارج از فاکتور'],['exp','هزینه‌ها'],['inv','فاکتورهای فروش و خرید'],
+  ['chequeEntries','ورود چک‌های دریافتنی و پرداختنی'],['cheques','گردش چک‌های دریافتنی و پرداختنی'],
+  ['warehouseOps','بازگردانی رسید، حواله و انتقال انبار (JSON)'],['warehouseOpsInput','ورود جدید رسید، حواله و انتقال انبار'],['receipts','رسیدهای کالا و رسید محصول تولیدی'],
+  ['issues','حواله خروج کالا و مصرف مواد'],['transfers','انتقال بین انبارها'],
+  ['boms','فرمول‌های ساخت (BOM)'],['productionOrders','دستورهای ساخت و اسناد مرتبط'],['cardex','کارتکس کالا (گزارش و خروجی)']
+ ];
+ const kinds=Object.keys(TPL).filter(k=>!['cardex','chequeEntries','warehouseOpsInput'].includes(k));
+ return '<div class="card"><div class="ftitle">مرکز جامع ورود و خروج اطلاعات Excel</div><div class="hint">خروجی یکپارچه شامل اطلاعات پایه، اسناد روزانه، فاکتورها، دریافت و پرداخت، چک‌ها، رسید و حواله کالا، انتقال انبار، BOM، دستورهای ساخت، دستمزد، روزهای بسته‌شده و سوابق آرشیوی است. برای بازیابی کامل، فایل یکپارچه MR یا پشتیبان JSON را نگه دارید.</div><div class="row mt"><button class="btn pri" data-a="dataExcelExport">⬇️ خروجی Excel یکپارچه تمام اطلاعات</button><button class="btn" data-a="bakDl">💾 پشتیبان کامل JSON</button><button class="btn" data-a="savedExports">🗂️ فایل‌های خروجی ذخیره‌شده</button></div><div class="hint">نام فایل خروجی هنگام دریافت قابل تعیین است. در فایل‌های عملیاتی، JSON کامل هر سند برای حفظ اقلام، انبارها، پرداخت‌ها و ارتباطات اصلی نگهداری می‌شود.</div></div>'+
+ '<div class="card"><div class="ftitle">ورود Excel / Google Sheets</div><label>نوع اطلاعات فایل ورودی</label><select id="dataImportKind" class="wide">'+sel(options,UI.dataImportKind||'unified')+'</select><div class="row mt"><button class="btn pri" data-a="dataPaste">📋 چسباندن از اکسل</button><label class="btn filebtn">📂 انتخاب فایل Excel<input type="file" data-imp="data" accept=".xlsx,.xls,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/octet-stream,*/*"></label></div><div class="hint">ستون‌ها با سرعنوان فارسی و انگلیسی تشخیص داده می‌شوند و جابه‌جایی ستون‌ها اصلاح می‌شود. عملیات مالی و موجودی فقط پس از اعتبارسنجی اشخاص، کالاها، انبارها، شناسه‌ها، تاریخ و توازن حسابداری وارد می‌شوند. فایل کارتکس گزارش محاسباتی است و برای بازیابی باید اسناد مبنا وارد شوند.</div></div>'+
+ '<div class="card"><div class="ftitle">قالب‌ها و خروجی اطلاعات واقعی هر بخش</div>'+kinds.map(k=>'<div class="orow"><div><b>'+esc(TPL[k].n)+'</b><div class="hint">'+esc(TPL[k].h.slice(0,4).join('، '))+'</div></div><div class="acts"><button class="btn sm" data-a="tpl" data-p="'+k+'">قالب ورود</button><button class="btn sm" data-a="exportBaseData" data-p="'+k+'">خروجی اطلاعات موجود</button><button class="btn sm" data-a="pasteImp" data-p="'+k+'">چسباندن</button><label class="btn sm filebtn">انتخاب فایل<input type="file" data-imp="'+k+'" accept=".xlsx,.xls,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/octet-stream,*/*"></label></div></div>').join('')+
+ '<div class="orow"><div><b>کارتکس کالا با جست‌وجوی شخص و کالا</b><div class="hint">خروجی کارتکس بر اساس فیلترهای کالا، شخص، انبار و بازه تاریخ از بخش موجودی انبارها انجام می‌شود.</div></div><div class="acts"><button class="btn sm" data-a="bt" data-p="stock">رفتن به کارتکس انبار</button></div></div></div>'+
+ '<div class="card"><div class="ftitle">قالب‌های ورود ردیفی عملیات</div>'+
+ '<div class="orow"><div><b>'+esc(TPL.chequeEntries.n)+'</b><div class="hint">هر ردیف یک چک جدید؛ شناسه صیادی یکتا، شخص، سررسید و منبع پرداخت کنترل می‌شود.</div></div><div class="acts"><button class="btn sm" data-a="tpl" data-p="chequeEntries">قالب</button><button class="btn sm" data-a="pasteImp" data-p="chequeEntries">چسباندن</button><label class="btn sm filebtn">ورود فایل<input type="file" data-imp="chequeEntries" accept=".xlsx,.xls,.csv,.tsv,.txt,*/*"></label></div></div>'+
+ '<div class="orow"><div><b>'+esc(TPL.warehouseOpsInput.n)+'</b><div class="hint">هر کالا یک ردیف؛ شناسه گروه سند برای تجمیع چند قلم در یک رسید/حواله/انتقال استفاده می‌شود.</div></div><div class="acts"><button class="btn sm" data-a="tpl" data-p="warehouseOpsInput">قالب</button><button class="btn sm" data-a="pasteImp" data-p="warehouseOpsInput">چسباندن</button><label class="btn sm filebtn">ورود فایل<input type="file" data-imp="warehouseOpsInput" accept=".xlsx,.xls,.csv,.tsv,.txt,*/*"></label></div></div></div>'+
+ '<div class="card"><div class="ftitle">قواعد ایمنی ورود گروهی</div><ul class="hint"><li>ابتدا فایل را در محیط آزمایشی وارد و گزارش‌های مربوط را کنترل کنید.</li><li>مبالغ و تعدادها باید عددی و تاریخ‌ها در سال مالی فعال باشند.</li><li>فاکتور تکراری، شناسه صیادی تکراری و عملیات روز بسته‌شده دوباره ثبت نمی‌شوند.</li><li>ورود رسید، حواله و انتقال از مسیر موتور موجودی و سند دوبل انجام می‌شود؛ گزارش کارتکس مستقیماً به موجودی تبدیل نمی‌شود.</li><li>برای بازگردانی کامل سال‌های قبل و تمام تنظیمات، پشتیبان JSON مسیر مطمئن‌تر است.</li></ul></div>';
+}
+function exportExcelScope(scope){
+ const rows=unifiedExcelRows(),filtered=MRKDataTools.selectScopeRows(rows,scope);
+ if(filtered.length<=1)return toast('اطلاعاتی برای خروجی این بخش وجود ندارد.');
+ const labels={operations:'تمام عملیات و اسناد',cheques:'گردش چک‌ها',receipts:'رسیدهای کالا',issues:'حواله‌ها و خروج کالا',transfers:'انتقال بین انبارها',warehouseOps:'رسید و حواله و انتقال انبار',inventory:'موجودی و گردش انبارها'};
+ const label=labels[scope]||scope;
+ saveBlob(fname('خروجی '+label,'xlsx'),xlsxBlob(filtered,label));
+ audit('خروجی','Excel – '+label,label,'',filtered.length-1);save();
 }
 function exportBaseData(k){
+ if(k==='cardex')return ACT.cardexExport();
+ if(['operations','cheques','receipts','issues','transfers','warehouseOps','inventory'].includes(k))return exportExcelScope(k);
+ if(k==='chequeEntries')return exportExcelScope('cheques');
  let rows=[],name='';
  if(k==='parties'){name='اشخاص';rows=[['کد','نام','نوع','تلفن','نشانی','مانده اول دوره','وضعیت مانده'],...S.parties.map(p=>[p.code||'',p.name,p.kind,p.phone||'',p.addr||'',num(p.open),p.side==='bs'?'بستانکار':'بدهکار'])]}
  else if(k==='goods'){
@@ -1279,6 +1452,8 @@ function exportBaseData(k){
   S.goods.forEach(g=>{const row=[g.code||'',g.name,g.kind||'commercial',g.unit||'عدد',num(g.price),num(g.minQty)];whs.forEach(w=>{const cur=B.inv[g.id+'|'+w.id]||{q:0,v:0};const op=w.id==='1'?{q:g.q1,c:g.c1}:w.id==='2'?{q:g.q2,c:g.c2}:((g.opening||{})[w.id]||{});row.push(num(cur.q),num(cur.v),num(op.q),num(op.c))});rows.push(row)});
  }else if(k==='sources'){name='منابع مالی';rows=[['کد','نام','نوع','حساب معین','مانده اول دوره','مانده فعلی'],...S.sources.map(x=>[x.code||'',x.name,x.kind,x.acc,num(x.open),num(B.sb[x.id])])]}
  else if(k==='coa'){name='کدینگ حساب‌ها';rows=[['کد حساب','نام حساب','نوع تفصیلی'],...S.accounts.map(a=>[a.code,a.name,S.taf[a.code]||'ندارد'])]}
+ else if(k==='warehouses'){name='انبارها';rows=[templateSpec('warehouses').h,...warehouseList().map(w=>[w.id,w.name,w.acc])]}
+ else if(k==='workers'){name='کارگران تولید';rows=[templateSpec('workers').h,...(S.workers||[]).map(w=>[w.id,w.name,num(w.monthlyGross),num(w.requiredHours),w.active===false?'خیر':'بله'])]}
  else if(k==='boms'){
   name='فرمول‌های ساخت BOM';rows=[templateSpec('boms').h];
   S.boms.forEach(b=>{const p=S.goods.find(g=>g.id===b.productId);(b.materials||[]).forEach(m=>{const g=S.goods.find(x=>x.id===m.g);rows.push([p?.code||'',p?.name||'',num(b.batchQty),p?.unit||'',b.desc||'',g?.code||'',g?.name||'',num(m.q),m.unit||g?.unit||'',b.id||'',b.productId||'',m.g||''])})});
@@ -1290,6 +1465,7 @@ function exportBaseData(k){
  audit('خروجی','Excel – اطلاعات موجود',name,'',rows.length-1);save();;
 }
 ACT.exportBaseData=k=>exportBaseData(k);
+ACT.exportExcelScope=k=>exportExcelScope(k);
 ACT.dataExcelExport=()=>{
  const rows=unifiedExcelRows();
  saveBlob(fname('خروجی یکپارچه MR','xlsx'),xlsxBlob(rows,'اطلاعات یکپارچه MR'));
@@ -1357,7 +1533,106 @@ function importProductionOrderRows(body){
  if(records.length===1)return 'هیچ دستور ساختی برای ورود وجود ندارد.';
  return runUnifiedImport(records);
 }
-function importRows(k,body){if(k==='boms')return importBomRows(body);if(k==='productionOrders')return importProductionOrderRows(body);const byName=(arr,n)=>arr.find(x=>x.name===String(n).trim());let errs=[];
+function importRows(k,body){
+ const byName=(arr,n)=>arr.find(x=>x.name===String(n).trim());
+ let errs=[];
+ if(k==='warehouses'){
+  const mut=c=>{
+   c.warehouses=c.warehouses||[];
+   body.forEach(r=>{
+    const name=String(r[1]||'').trim(),sourceId=String(r[0]||'').trim(),requestedAcc=String(r[2]||'').trim();
+    if(!name||c.warehouses.some(w=>(sourceId&&String(w.id)===sourceId)||String(w.name).trim()===name))return;
+    let acc=requestedAcc,existing=acc&&c.accounts.find(a=>String(a.code)===acc);
+    if(existing&&existing.name!=='موجودی کالا – '+name)acc='';
+    if(!acc){const used=c.warehouses.map(w=>Number(w.acc)||0);let code=Math.max(1601,...used)+1;while(c.accounts.some(a=>String(a.code)===String(code)))code++;acc=String(code)}
+    const id=sourceId||mkid(c,'w');c.warehouses.push({id,name,acc});
+    if(!c.accounts.some(a=>String(a.code)===acc))c.accounts.push({code:acc,name:'موجودی کالا – '+name});
+   });
+  };
+  const probe=clone(S);mut(probe);const count=(probe.warehouses||[]).length-(S.warehouses||[]).length;
+  if(count<=0)return 'انبار جدیدی وارد نشد؛ موارد موجود یا تکراری رد شدند.';
+  if(!commit(mut,'ورود اکسل','انبارها','ورود دسته‌ای','',count+' انبار'))return 'ورود انبارها انجام نشد.';
+  index(B);render();return '';
+ }
+ if(k==='workers'){
+  const mut=c=>{
+   c.workers=c.workers||[];
+   body.forEach(r=>{
+    const name=String(r[1]||'').trim(),id=String(r[0]||'').trim();
+    if(!name||(c.workers||[]).some(w=>(id&&String(w.id)===id)||w.name===name))return;
+    c.workers.push({id:id||mkid(c,'worker'),name,monthlyGross:Math.round(num(r[2])),requiredHours:num(r[3]),active:!['خیر','غیرفعال','0','false'].includes(String(r[4]||'بله').trim().toLowerCase())});
+   });
+  };
+  const probe=clone(S);mut(probe);const count=(probe.workers||[]).length-(S.workers||[]).length;
+  if(count<=0)return 'کارگر جدیدی وارد نشد؛ موارد موجود یا تکراری رد شدند.';
+  if(!commit(mut,'ورود اکسل','کارگران تولید','ورود دسته‌ای','',count+' کارگر'))return 'ورود کارگران انجام نشد.';
+  render();return '';
+ }
+ if(k==='chequeEntries'){
+  const validation=[];
+  const mut=c=>{
+   body.forEach((r,i)=>{
+    const line=i+2,type=String(r[1]||'').trim(),date=normDate(r[0]),person=byName(c.parties,r[2]),sayad=en(r[3]||'').replace(/\D/g,''),due=normDate(r[5]),amount=Math.round(num(r[6]));
+    const error=m=>validation.push('ردیف '+fa(line)+': '+m);
+    if(!['دریافت چک','پرداخت چک'].includes(type))return error('نوع عملیات باید دریافت چک یا پرداخت چک باشد');
+    if(c.fyClosed||!date||String(date).slice(0,4)!==String(c.fy))return error('تاریخ در سال مالی فعال معتبر نیست');
+    if(c.days[date]?.closed)return error('روز انتخاب‌شده بسته است');
+    if(!person)return error('شخص در فهرست اشخاص پیدا نشد');
+    if(!/^\d{16}$/.test(sayad))return error('شناسه صیادی باید دقیقاً ۱۶ رقم باشد');
+    if(!due||!(amount>0))return error('سررسید یا مبلغ چک نامعتبر است');
+    if(c.ops.some(o=>o.status!=='deleted'&&en(o.sayad||'')===sayad))return error('شناسه صیادی تکراری است');
+    let src='';
+    if(type==='پرداخت چک'){const source=byName(c.sources,r[7]);if(!source)return error('منبع پرداخت چک در فهرست صندوق و بانک یافت نشد');src=source.id}
+    const id=mkid(c,'o'),no=++c.docSeq;
+    c.ops.push({id,seq:c.seq,no,date,type,status:'active',user:UI.user?.name||'سامانه',ts:nowIso(),desc:String(r[8]||''),party:person.id,sayad,bank:String(r[4]||''),due,amt:amount,src});
+   });
+  };
+  const probe=clone(S);mut(probe);
+  if(validation.length)return validation.slice(0,5).join(' | ');
+  const count=probe.ops.length-S.ops.length;
+  if(count<=0)return 'چک جدیدی برای ورود پیدا نشد.';
+  const checked=build(probe);if(checked.errs.length)return 'ورود چک متوقف شد: '+checked.errs[0].msg;
+  if(!commit(mut,'ورود اکسل','چک‌ها','ورود دسته‌ای','',count+' چک'))return 'ورود چک‌ها انجام نشد.';
+  index(B);render();return '';
+ }
+ if(k==='warehouseOpsInput'){
+  const groups=new Map(),validation=[];
+  body.forEach((r,i)=>{
+   const line=i+2,groupKey=String(r[0]||('ROW-'+line)).trim(),date=normDate(r[1]),type=String(r[2]||'').trim(),code=String(r[3]||'').trim(),name=String(r[4]||'').trim(),q=num(r[5]),price=Math.round(num(r[6])),warehouseName=String(r[7]||'').trim(),toName=String(r[8]||'').trim(),acc=en(r[9]||'').replace(/\D/g,''),desc=String(r[10]||'');
+   const error=m=>validation.push('ردیف '+fa(line)+': '+m);
+   if(!['رسید کالا','حواله خروج کالا','انتقال بین انبارها'].includes(type))return error('نوع عملیات انبار نامعتبر است');
+   if(!date||String(date).slice(0,4)!==String(S.fy)||isClosed(date))return error('تاریخ نامعتبر است یا روز بسته شده است');
+   const good=S.goods.find(g=>(code&&String(g.code)===code)||(name&&g.name===name));if(!good)return error('کالا با کد یا نام واردشده پیدا نشد');
+   if(!(q>0))return error('تعداد باید بزرگ‌تر از صفر باشد');
+   const from=warehouseList().find(w=>w.name===warehouseName||String(w.id)===warehouseName),to=warehouseList().find(w=>w.name===toName||String(w.id)===toName);
+   if(!from)return error('انبار مبدأ یا انبار رسید پیدا نشد');
+   if(type==='رسید کالا'&&!(price>0))return error('برای رسید کالا بهای واحد مثبت لازم است');
+   if(type==='انتقال بین انبارها'&&(!to||to.id===from.id))return error('انبار مقصد معتبر و متفاوت از مبدأ انتخاب کنید');
+   if(type==='حواله خروج کالا'&&(!acc||!S.accounts.some(a=>String(a.code)===acc)||!['5','6'].some(x=>acc.startsWith(x))))return error('حساب هزینه یا مصرف معتبر نیست');
+   const key=type+'|'+date+'|'+groupKey,entry=groups.get(key)||{type,date,desc,fromWh:from.id,toWh:to?.id||'',acc,items:[]};
+   if(entry.fromWh!==from.id||entry.toWh!==(to?.id||''))return error('انبارهای یک سند گروهی باید یکسان باشند');
+   entry.items.push(type==='رسید کالا'?{g:good.id,q,p:price,w:from.id,unit:good.unit}:{g:good.id,q,w:from.id,unit:good.unit});
+   groups.set(key,entry);
+  });
+  if(validation.length)return validation.slice(0,5).join(' | ');
+  if(!groups.size)return 'ردیف معتبر برای ورود گردش انبار پیدا نشد.';
+  const mut=c=>{
+   groups.forEach(g=>{
+    const id=mkid(c,'o'),no=++c.docSeq,op={id,seq:c.seq,no,date:g.date,type:g.type,status:'active',user:UI.user?.name||'سامانه',ts:nowIso(),desc:g.desc,items:clone(g.items)};
+    if(g.type==='انتقال بین انبارها'){op.fromWh=g.fromWh;op.toWh=g.toWh}
+    if(g.type==='حواله خروج کالا')op.acc=g.acc;
+    c.ops.push(op);
+   });
+  };
+  const probe=clone(S);mut(probe);const checked=build(probe);
+  if(checked.errs.length)return 'ورود گردش انبار متوقف شد: '+checked.errs[0].msg;
+  const count=groups.size;
+  if(!commit(mut,'ورود اکسل','گردش انبار','ورود گروهی','',count+' سند'))return 'ورود گردش انبار انجام نشد.';
+  index(B);render();return '';
+ }
+ if(k==='boms')return importBomRows(body);
+ if(k==='productionOrders')return importProductionOrderRows(body);
+
  const mut=c=>{const nid_=p=>mkid(c,p);
   body.forEach((r,i)=>{const row=i+2;const E=m=>errs.push('ردیف '+fa(row)+': '+m);
    const party=n=>{const p=byName(c.parties,n);if(!p)E('شخص «'+n+'» یافت نشد');return p},src=n=>{const s=byName(c.sources,n);if(!s)E('منبع «'+n+'» یافت نشد');return s};
@@ -1483,7 +1758,7 @@ function settingsPage(){const t=UI.st||'acct';const tabs=[['acct','🧾 حساب
  else if(t==='roles')h+=`<div class="card"><div class="ftitle">نقش‌ها و سطوح دسترسی</div><p class="hint">نقش پایه، عضویت شرکت و مجوزهای کاربر از پایگاه مرکزی خوانده می‌شوند. برای جلوگیری از ایجاد دسترسی محلیِ غیرقابل اتکا، تغییر نقش فقط از بخش «کاربران» و از طریق سرویس مدیریتی احراز هویت‌شده انجام می‌شود.</p><div class="trow"><span>مدیر سیستم / مدیر عامل</span><b>دسترسی مدیریتی</b></div><div class="trow"><span>مدیر مالی / حسابدار</span><b>عملیات مالی بر اساس نقش</b></div><div class="trow"><span>صندوقدار / فروش / خرید / انبار</span><b>دسترسی عملیاتی محدود</b></div><div class="trow"><span>حسابرس / ناظر</span><b>فقط مشاهده</b></div></div>`
  else if(t==='guest')h+=`<div class="card"><div class="ftitle">محیط مهمان و نمایش عمومی</div><div class="trow"><span>وضعیت این بسته اندروید</span><b>بدون QR Code</b></div><div class="trow"><span>ورود مهمان در نسخه وب</span><b>نشست تصادفی و کوتاه‌عمر؛ بدون رمز ثابت</b></div><div class="hint">این بسته اندروید هیچ تصویر یا کد QR ندارد. محیط مهمان وب با هر شروع، یک توکن تصادفی مستقل و کوتاه‌عمر می‌سازد. عملیات حسابداری مهمان فقط در حافظه موقت همان نشست نگهداری می‌شود و به پایگاه داده یا شرکت اصلی ارسال نمی‌شود. در سرور فقط ایجاد نشست و خروج برای کنترل امنیت ثبت می‌شود.</div><button class="btn pri wide mt" data-a="openGuestDemo">بازکردن صفحه عمومی مهمان</button><button class="btn wide mt" data-a="copyGuestDemo">کپی نشانی عمومی</button></div>`;
  else if(t==='bak')h+=`<div class="card"><div class="ftitle">پشتیبان‌گیری</div><div class="row"><button class="btn pri" data-a="bakDl">💾 دریافت فایل پشتیبان</button><button class="btn" data-a="bakMail">✉️ ارسال پشتیبان به ایمیل</button><label class="btn filebtn">♻️ بازیابی از فایل<input type="file" data-restore accept=".json,application/json,text/plain,application/octet-stream,*/*"></label></div><label>نشانی ایمیل برای پشتیبان و خروجی‌ها</label><input id="s_mail" dir="ltr" value="${esc(S.email||'') }" onchange="S.email=this.value.trim();save()"><div class="hint">در گوشی با «اشتراک‌گذاری» فایل مستقیم به برنامهٔ ایمیل پیوست می‌شود؛ در غیر این صورت فایل دانلود و پنجرهٔ ایمیل باز می‌شود.</div></div><div class="card"><div class="ftitle">همگام‌سازی ابری امن</div><div class="hint">اتصال از طریق حساب کاربری سازمانی و سطح دسترسی پایگاه داده انجام می‌شود؛ کلید مشترک در برنامه ذخیره نشده است.</div><div class="trow"><span>شرکت فعال</span><b>${esc(S.company||'—')}</b></div><div class="trow"><span>شناسه شرکت</span><b dir="ltr">${esc(UI.companyId||'—')}</b></div><div class="hint" id="syncMsg">${esc(SYNC.msg||'برای ذخیره و دریافت تغییرات از دکمه همگام‌سازی استفاده کنید.')}</div><button class="btn pri mt" data-a="syncSave">🔄 همگام‌سازی اکنون</button><div class="hint">تغییرات پس از ثبت، با نشست احراز هویت‌شده ارسال و نسخه سرور با کنترل تداخل بررسی می‌شود.</div></div>`;
- else h+=`<div class="card"><div class="ftitle">کنترل‌ها</div><label class="chk"><input type="checkbox" ${S.autoPdf!==false?'checked':''} data-a="togPdf"> پس از بستن روز، PDF دفتر روزنامه و دفتر کل همان روز خودکار ذخیره شود</label><div class="trow"><span>شناسهٔ این دستگاه</span><b dir="ltr">${esc(S.dev)}</b></div><div class="trow"><span>آخرین پشتیبان خودکار (بستن روز)</span><b>${S.lastBackup?fa(S.lastBackup):'—'}</b></div><div class="trow"><span>نسخهٔ برنامه</span><b>${fa('2.8.3')}</b></div><div class="hint">توازن سند، قفل روز بسته، حذف منطقی، مسیر حسابرسی و شماره‌گذاری یکتا در هستهٔ برنامه اجباری هستند.</div></div>`;
+ else h+=`<div class="card"><div class="ftitle">کنترل‌ها</div><label class="chk"><input type="checkbox" ${S.autoPdf!==false?'checked':''} data-a="togPdf"> پس از بستن روز، PDF دفتر روزنامه و دفتر کل همان روز خودکار ذخیره شود</label><div class="trow"><span>شناسهٔ این دستگاه</span><b dir="ltr">${esc(S.dev)}</b></div><div class="trow"><span>آخرین پشتیبان خودکار (بستن روز)</span><b>${S.lastBackup?fa(S.lastBackup):'—'}</b></div><div class="trow"><span>نسخهٔ برنامه</span><b>${fa('2.9.0')}</b></div><div class="hint">توازن سند، قفل روز بسته، حذف منطقی، مسیر حسابرسی و شماره‌گذاری یکتا در هستهٔ برنامه اجباری هستند.</div></div>`;
  return h}
 
 function persistSettings(section,patch,label){const before=clone(settingsOf());S.settings=settingsOf();S.settings[section]={...S.settings[section],...patch};S.setMt=Date.now();audit('تغییر تنظیمات',label||section,section,before[section],S.settings[section]);save();B=index(build(S));render();toast('تنظیمات ذخیره شد')}

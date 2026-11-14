@@ -84,5 +84,182 @@
       .map(x => ({ ...x, closeQty: x.openQty + x.inQty - x.outQty, closeValue: x.openValue + x.inValue - x.outValue }))
       .sort((a, b) => a.goodsId.localeCompare(b.goodsId) || a.warehouseId.localeCompare(b.warehouseId));
   }
-  return { latinDigits, normalizeHeader, mapImportRows, buildCardex };
+
+  function classifyOperation(value) {
+    const type = typeof value === 'string' ? value : String(value && value.type || '');
+    const chequeTypes = ['دریافت چک', 'پرداخت چک', 'وصول چک', 'برگشت چک', 'پاس چک پرداختی'];
+    if (chequeTypes.includes(type)) return 'cheques';
+    if (type === 'انتقال بین انبارها') return 'transfers';
+    if (['رسید کالا', 'رسید محصول تولیدی', 'خرید', 'برگشت از فروش'].includes(type)) return 'receipts';
+    if (['حواله خروج کالا', 'حواله مصرف مواد تولید', 'فروش', 'برگشت از خرید'].includes(type)) return 'issues';
+    if (['دریافت بابت فاکتور', 'پرداخت بابت فاکتور', 'دریافت خارج از فاکتور', 'پرداخت خارج از فاکتور'].includes(type)) return 'treasury';
+    return 'operations';
+  }
+
+  function uniqueByRecordId(records) {
+    const seen = new Set();
+    const result = [];
+    (Array.isArray(records) ? records : []).forEach(record => {
+      if (!record || typeof record !== 'object') return;
+      const key = record.id != null && String(record.id) !== ''
+        ? 'id:' + String(record.id)
+        : 'json:' + JSON.stringify(record);
+      if (seen.has(key)) return;
+      seen.add(key);
+      result.push(record);
+    });
+    return result;
+  }
+
+
+  function buildCardexLedger(input) {
+    const source = input || {};
+    const goods = Array.isArray(source.goods) ? source.goods : [];
+    const warehouses = Array.isArray(source.warehouses) ? source.warehouses : [];
+    const openingRows = Array.isArray(source.openingRows) ? source.openingRows : [];
+    const movements = Array.isArray(source.movements) ? source.movements : [];
+    const filters = source.filters || {};
+    const from = String(filters.from || '');
+    const to = String(filters.to || '9999/99/99');
+    const goodsQuery = normalizeHeader(filters.goodsQuery || '');
+    const partyQuery = normalizeHeader(filters.partyQuery || '');
+    const warehouseId = String(filters.warehouseId || '');
+    const goodsById = new Map(goods.map(g => [String(g.id), g]));
+    const warehousesById = new Map(warehouses.map(w => [String(w.id), w]));
+    const allowedGoods = new Set(goods.filter(g => {
+      if (!goodsQuery) return true;
+      return normalizeHeader([g.code, g.name, g.unit].join(' ')).includes(goodsQuery);
+    }).map(g => String(g.id)));
+    const allowedWarehouses = new Set(warehouses.filter(w =>
+      !warehouseId || String(w.id) === warehouseId
+    ).map(w => String(w.id)));
+    const balances = new Map();
+    const keyOf = (g, w) => String(g) + '|' + String(w);
+    const getBalance = (g, w) => {
+      const key = keyOf(g, w);
+      if (!balances.has(key)) balances.set(key, {goodsId:String(g),warehouseId:String(w),quantity:0,value:0});
+      return balances.get(key);
+    };
+    const validKey = (g, w) => allowedGoods.has(String(g)) && allowedWarehouses.has(String(w));
+    openingRows.forEach(x => {
+      if (!x || !validKey(x.g, x.w)) return;
+      const b = getBalance(x.g, x.w);
+      b.quantity += Number(x.q) || 0;
+      b.value += Number(x.v) || 0;
+    });
+    const sorted = movements.filter(x => x && validKey(x.g, x.w) && String(x.date || '') <= to)
+      .slice().sort((a,b) => String(a.date||'').localeCompare(String(b.date||'')) ||
+        (Number(a.no)||0)-(Number(b.no)||0) || String(a.id||'').localeCompare(String(b.id||'')));
+    sorted.filter(x => String(x.date||'') < from).forEach(x => {
+      const b = getBalance(x.g, x.w);
+      b.quantity += Number(x.q) || 0;
+      b.value += Number(x.v) || 0;
+    });
+    const snapshot = () => [...balances.values()].map(b => ({
+      goodsId:b.goodsId, warehouseId:b.warehouseId,
+      code:(goodsById.get(b.goodsId)||{}).code || '',
+      goodsName:(goodsById.get(b.goodsId)||{}).name || '',
+      unit:(goodsById.get(b.goodsId)||{}).unit || '',
+      warehouseName:(warehousesById.get(b.warehouseId)||{}).name || '',
+      quantity:b.quantity, value:b.value
+    })).sort((a,b)=>(a.code||'').localeCompare(b.code||'')||a.goodsName.localeCompare(b.goodsName)||a.warehouseName.localeCompare(b.warehouseName));
+    const opening = snapshot();
+    const visible = [];
+    sorted.filter(x => String(x.date||'') >= from && String(x.date||'') <= to).forEach(x => {
+      const b = getBalance(x.g, x.w);
+      const q = Number(x.q) || 0, v = Number(x.v) || 0;
+      b.quantity += q;
+      b.value += v;
+      const personText = normalizeHeader([x.partyName, x.partyCode].filter(Boolean).join(' '));
+      if (partyQuery && !personText.includes(partyQuery)) return;
+      const g = goodsById.get(String(x.g)) || {};
+      const w = warehousesById.get(String(x.w)) || {};
+      visible.push({
+        id:String(x.id||''), date:String(x.date||''), no:x.no==null?'':x.no,
+        type:String(x.type||''), description:String(x.description||''),
+        goodsId:String(x.g), code:g.code||'', goodsName:g.name||'', unit:g.unit||'',
+        partyId:String(x.partyId||''), partyName:String(x.partyName||''),
+        warehouseId:String(x.w), warehouseName:w.name||'',
+        inQuantity:q>0?q:0, outQuantity:q<0?-q:0,
+        inValue:v>0?v:0, outValue:v<0?-v:0,
+        quantity:q, value:v, balanceQty:b.quantity, balanceValue:b.value
+      });
+    });
+    return { opening, movements:visible, closing:snapshot() };
+  }
+
+
+  function buildChequeRegisterRows(cheques, parties, sources, filters) {
+    const f = filters || {};
+    const partyById = new Map((parties || []).map(x => [String(x.id), x]));
+    const sourceById = new Map((sources || []).map(x => [String(x.id), x]));
+    const query = normalizeHeader(f.query || '');
+    const direction = String(f.direction || '');
+    return (Array.isArray(cheques) ? cheques : [])
+      .map(c => {
+        const party = partyById.get(String(c.party)) || {};
+        const source = sourceById.get(String(c.src)) || {};
+        return {
+          id: String(c.id || ''),
+          direction: c.dir === 'out' ? 'پرداختنی' : 'دریافتنی',
+          directionCode: c.dir === 'out' ? 'out' : 'in',
+          partyId: String(c.party || ''),
+          partyName: String(party.name || ''),
+          partyCode: String(party.code || ''),
+          sayad: String(c.no || ''),
+          bank: String(c.bank || ''),
+          sourceName: String(source.name || ''),
+          chequeDate: String(c.date || ''),
+          dueDate: String(c.due || ''),
+          settlementDate: String(c.sdate || ''),
+          amount: Number(c.amt) || 0,
+          status: String(c.status || '')
+        };
+      })
+      .filter(c => !direction || c.directionCode === direction)
+      .filter(c => !query || normalizeHeader([
+        c.partyName,c.partyCode,c.sayad,c.bank,c.sourceName,c.status
+      ].join(' ')).includes(query))
+      .sort((a,b) => a.dueDate.localeCompare(b.dueDate) || a.sayad.localeCompare(b.sayad));
+  }
+
+  function selectScopeRows(rows, scope) {
+    if (!Array.isArray(rows) || !rows.length) return [];
+    const header = rows[0];
+    const records = rows.slice(1).filter(row => {
+      const recordType = String(row && row[0] || '');
+      const operationType = String(row && row[3] || '');
+      const isOperation = recordType === 'operation' || recordType === 'archivedOperation';
+      const opScope = isOperation ? classifyOperation(operationType) : '';
+      const dependencies = ['meta','party','good','source','warehouse','account','productionOrder','worker','bom'];
+      if (scope === 'all' || scope === 'operations') return true;
+      if (['cheques','receipts','issues','transfers','warehouseOps','inventory'].includes(scope)) {
+        if (dependencies.includes(recordType) || recordType === 'archivedDay' || recordType === 'day' || (recordType === 'openingStock' && scope !== 'cheques')) return true;
+      }
+      if (scope === 'inventory' || scope === 'warehouseOps') {
+        if (recordType === 'openingStock') return true;
+        if (!isOperation) return false;
+        if (['receipts','issues','transfers'].includes(opScope)) return true;
+        try {
+          const operation = JSON.parse(String(row && row[8] || '{}'));
+          return Array.isArray(operation.moves) && operation.moves.length > 0;
+        } catch (error) { return false; }
+      }
+      if (scope === 'cheques') return recordType === 'carryCheque' || (isOperation && opScope === 'cheques');
+      if (scope === 'receipts' || scope === 'issues' || scope === 'transfers') return isOperation && opScope === scope;
+      if (scope === 'cardex') return isOperation && ['receipts','issues','transfers'].includes(opScope);
+      if (scope === 'warehouses') return recordType === 'warehouse';
+      if (scope === 'workers') return recordType === 'worker';
+      if (scope === 'boms') return recordType === 'bom';
+      if (scope === 'productionOrders') return recordType === 'productionOrder';
+      if (scope === 'parties') return recordType === 'party';
+      if (scope === 'goods' || scope === 'inventory') return recordType === 'good' || recordType === 'openingStock';
+      if (scope === 'sources') return recordType === 'source';
+      if (scope === 'coa') return recordType === 'account';
+      return recordType === scope;
+    });
+    return [header, ...records];
+  }
+
+  return { latinDigits, normalizeHeader, mapImportRows, buildCardex, buildCardexLedger, classifyOperation, uniqueByRecordId, selectScopeRows, buildChequeRegisterRows };
 });

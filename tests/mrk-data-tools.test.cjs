@@ -89,3 +89,142 @@ test('maps production order fields including full JSON payload when columns are 
   assert.equal(result.mode, 'header-mapped');
   assert.deepEqual(result.rows[0], ['', 'PR-01', '۱۴۰۵/۰۱/۰۲', 'FG-01', 25, '{"id":"o1"}', '[]']);
 });
+
+test('classifies operational records for cheque, stock receipt, issue and transfer exports', () => {
+  const { classifyOperation } = require('../mrk-data-tools.js');
+  assert.equal(classifyOperation({type:'دریافت چک'}), 'cheques');
+  assert.equal(classifyOperation({type:'وصول چک'}), 'cheques');
+  assert.equal(classifyOperation({type:'رسید کالا'}), 'receipts');
+  assert.equal(classifyOperation({type:'حواله خروج کالا'}), 'issues');
+  assert.equal(classifyOperation({type:'انتقال بین انبارها'}), 'transfers');
+  assert.equal(classifyOperation({type:'فروش'}), 'issues');
+});
+
+test('deduplicates repeated source operations in cardex exports while preserving distinct ids', () => {
+  const { uniqueByRecordId } = require('../mrk-data-tools.js');
+  const a = {id:'op-1',type:'رسید کالا'};
+  const b = {id:'op-2',type:'انتقال بین انبارها'};
+  assert.deepEqual(uniqueByRecordId([a,a,b,{...a}]), [a,b]);
+});
+
+test('builds a searchable cardex with opening and closing balances per good and warehouse', () => {
+  const { buildCardexLedger } = require('../mrk-data-tools.js');
+  const result = buildCardexLedger({
+    goods: [
+      {id:'g1',code:'A-01',name:'آرد',unit:'کیلوگرم'},
+      {id:'g2',code:'B-02',name:'شکر',unit:'کیلوگرم'}
+    ],
+    warehouses: [{id:'w1',name:'اصلی'},{id:'w2',name:'فرعی'}],
+    openingRows: [{g:'g1',w:'w1',q:10,v:1000},{g:'g2',w:'w1',q:5,v:500}],
+    movements: [
+      {id:'m1',date:'1405/01/02',no:1,type:'رسید کالا',g:'g1',w:'w1',q:5,v:600,partyName:'شرکت آلفا'},
+      {id:'m2',date:'1405/01/04',no:2,type:'حواله خروج کالا',g:'g1',w:'w1',q:-3,v:-360,partyName:'شرکت بتا'},
+      {id:'m3',date:'1405/01/05',no:3,type:'انتقال بین انبارها',g:'g1',w:'w2',q:2,v:240,partyName:''},
+      {id:'m4',date:'1405/02/02',no:4,type:'رسید کالا',g:'g1',w:'w1',q:4,v:480,partyName:'شرکت آلفا'}
+    ],
+    filters: {from:'1405/01/01',to:'1405/01/31',goodsQuery:'A-01',partyQuery:'آلفا'}
+  });
+  assert.equal(result.movements.length, 1);
+  assert.equal(result.movements[0].id, 'm1');
+  assert.equal(result.movements[0].balanceQty, 15);
+  assert.equal(result.opening[0].quantity, 10);
+  assert.equal(result.closing.find(x=>x.warehouseId==='w1').quantity, 12);
+  assert.equal(result.closing.find(x=>x.warehouseId==='w2').quantity, 2);
+});
+
+test('person filter narrows visible cardex lines without changing actual stock balances', () => {
+  const { buildCardexLedger } = require('../mrk-data-tools.js');
+  const common = {
+    goods:[{id:'g1',code:'A',name:'کالا'}],
+    warehouses:[{id:'w1',name:'اصلی'}],
+    openingRows:[{g:'g1',w:'w1',q:10,v:100}],
+    movements:[
+      {id:'m1',date:'1405/01/02',g:'g1',w:'w1',q:5,v:50,partyName:'مشتری الف'},
+      {id:'m2',date:'1405/01/03',g:'g1',w:'w1',q:-4,v:-40,partyName:'مشتری ب'}
+    ],
+    filters:{from:'1405/01/01',to:'1405/01/31'}
+  };
+  const all = buildCardexLedger(common);
+  const person = buildCardexLedger({...common,filters:{...common.filters,partyQuery:'مشتری الف'}});
+  assert.equal(person.movements.length, 1);
+  assert.equal(all.closing[0].quantity, 11);
+  assert.equal(person.closing[0].quantity, 11);
+});
+
+test('filters unified record export scopes without losing complete JSON payloads', () => {
+  const { selectScopeRows } = require('../mrk-data-tools.js');
+  const headers=['نوع رکورد','شناسه','تاریخ','نوع عملیات','کد','نام / شرح','وضعیت','مقدار','JSON کامل رکورد'];
+  const rows=[headers,
+    ['operation','a','1405/01/01','دریافت چک','1','چک الف','active',100,'{"id":"a"}'],
+    ['operation','b','1405/01/02','انتقال بین انبارها','2','انتقال','active',5,'{"id":"b"}'],
+    ['operation','c','1405/01/03','رسید کالا','3','رسید','active',3,'{"id":"c"}'],
+    ['carryCheque','d','','','4','چک افتتاحیه','در جریان',40,'{"id":"d"}']];
+  assert.deepEqual(selectScopeRows(rows,'cheques').slice(1).map(r=>r[1]),['a','d']);
+  assert.deepEqual(selectScopeRows(rows,'transfers').slice(1).map(r=>r[1]),['b']);
+  assert.deepEqual(selectScopeRows(rows,'receipts').slice(1).map(r=>r[1]),['c']);
+  assert.equal(selectScopeRows(rows,'cheques')[1][8],'{"id":"a"}');
+});
+
+test('searches cardex movements by party code as well as the party name', () => {
+  const { buildCardexLedger } = require('../mrk-data-tools.js');
+  const result = buildCardexLedger({
+    goods:[{id:'g',code:'P-1',name:'کالا'}],
+    warehouses:[{id:'w',name:'اصلی'}],
+    openingRows:[],
+    movements:[{id:'x',date:'1405/01/01',g:'g',w:'w',q:1,v:5,partyName:'شرکت آلفا',partyCode:'C-204'}],
+    filters:{from:'1405/01/01',to:'1405/01/31',partyQuery:'C-204'}
+  });
+  assert.equal(result.movements.length,1);
+  assert.equal(result.movements[0].partyName,'شرکت آلفا');
+});
+
+test('scoped inventory restore includes opening stock, current and archived stock-changing operations', () => {
+  const { selectScopeRows } = require('../mrk-data-tools.js');
+  const headers=['نوع رکورد','شناسه','تاریخ','نوع عملیات','کد','نام / شرح','وضعیت','مقدار','JSON کامل رکورد'];
+  const rows=[headers,
+    ['meta','m','','','','','','','{"fy":1405}'],
+    ['good','g','','','','','','','{"id":"g"}'],
+    ['warehouse','w','','','','','','','{"id":"w"}'],
+    ['openingStock','g|w','','','','','','','{"key":"g|w","q":4,"v":40}'],
+    ['operation','op1','1405/01/01','انتقال بین انبارها','','','','','{"id":"op1"}'],
+    ['archivedOperation','op2','1404/12/29','حواله خروج کالا','','','','','{"id":"op2","type":"حواله خروج کالا"}'],
+    ['day','1405/01/01','','','','','','','{"closed":true}'],
+    ['operation','cash','1405/01/01','دریافت خارج از فاکتور','','','','','{"id":"cash"}']];
+  const selected=selectScopeRows(rows,'inventory');
+  const ids=selected.slice(1).map(r=>r[1]);
+  assert.ok(ids.includes('g|w'));
+  assert.ok(ids.includes('op1'));
+  assert.ok(ids.includes('op2'));
+  assert.ok(ids.includes('1405/01/01'));
+  assert.ok(!ids.includes('cash'));
+});
+
+test('builds a searchable cheque register for receivables and payables with source and dates', () => {
+  const { buildChequeRegisterRows } = require('../mrk-data-tools.js');
+  const rows=buildChequeRegisterRows([
+    {id:'c1',dir:'in',party:'p1',no:'1111222233334444',bank:'ملی',date:'1405/01/01',due:'1405/02/01',amt:100,status:'در جریان'},
+    {id:'c2',dir:'out',party:'p2',no:'5555666677778888',bank:'ملت',src:'s1',date:'1405/01/02',due:'1405/01/20',amt:200,status:'پاس‌شده',sdate:'1405/01/21'}
+  ],[
+    {id:'p1',name:'شرکت آلفا',code:'C-01'},
+    {id:'p2',name:'شرکت بتا',code:'C-02'}
+  ],[{id:'s1',name:'بانک تجارت'}],{query:'C-02',direction:'out'});
+  assert.equal(rows.length,1);
+  assert.equal(rows[0].partyName,'شرکت بتا');
+  assert.equal(rows[0].sourceName,'بانک تجارت');
+  assert.equal(rows[0].sayad,'5555666677778888');
+  assert.equal(rows[0].settlementDate,'1405/01/21');
+  assert.equal(rows[0].amount,200);
+});
+
+test('stock-document exports retain production orders needed to rebuild manufacturing inventory movements', () => {
+  const { selectScopeRows } = require('../mrk-data-tools.js');
+  const headers=['نوع رکورد','شناسه','تاریخ','نوع عملیات','کد','نام / شرح','وضعیت','مقدار','JSON کامل رکورد'];
+  const rows=[headers,
+    ['productionOrder','po1','1405/01/01','','PO-1','ساخت','تکمیل',2,'{"id":"po1","orderNo":"PO-1"}'],
+    ['bom','bom1','','','','فرمول','','','{"id":"bom1"}'],
+    ['operation','op1','1405/01/01','حواله مصرف مواد تولید','','مصرف','فعال',5,'{"id":"op1","prodOrderId":"po1","type":"حواله مصرف مواد تولید"}']];
+  const selected=selectScopeRows(rows,'warehouseOps');
+  assert.ok(selected.some(r=>r[0]==='productionOrder'&&r[1]==='po1'));
+  assert.ok(selected.some(r=>r[0]==='bom'&&r[1]==='bom1'));
+  assert.ok(selected.some(r=>r[0]==='operation'&&r[1]==='op1'));
+});
