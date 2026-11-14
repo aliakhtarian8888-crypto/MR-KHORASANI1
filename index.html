@@ -1096,7 +1096,21 @@ function templateAliases(k,spec){
 ACT.tpl=k=>{const t=templateSpec(k);saveBlob(fname('قالب اکسل '+t.n,'xlsx'),xlsxBlob([t.h,t.s],t.n));};
 
 async function readTable(file){const n=(file.name||'').toLowerCase();if(/\.(csv|tsv|txt)$/.test(n))return parseTable(await file.text());return await readXlsx(await file.arrayBuffer())}
+function importOperationalScope(kind,inputRows){
+ if(kind==='cardex')return 'کارتکس گزارش محاسباتی است و نباید به‌عنوان سند موجودی وارد شود؛ برای بازیابی موجودی از خروجی رسید، حواله، انتقال یا خروجی یکپارچه استفاده کنید.';
+ const mapped=MRKDataTools.mapImportRows(inputRows,DATA_EXCEL_HEADERS,DATA_EXCEL_ALIASES);
+ if(mapped.mode==='ambiguous-header')return 'سرستون‌های فایل ناقص یا مبهم است؛ فایل از نوع دیگری است یا ستون JSON کامل حذف شده است.';
+ if(mapped.mode==='empty'||!mapped.rows.length)return 'ردیف اطلاعاتی پیدا نشد.';
+ if(mapped.matched<2)return 'ساختار خروجی یکپارچه MR شناسایی نشد.';
+ const scoped=MRKDataTools.selectScopeRows([DATA_EXCEL_HEADERS,...mapped.rows],kind);
+ if(scoped.length<=1)return 'رکوردی برای بازگردانی در این بخش پیدا نشد.';
+ const bad=[];
+ scoped.slice(1).forEach((r,i)=>{if(!String(r[8]||'').trim())bad.push('ردیف '+fa(i+2)+': JSON کامل رکورد خالی است');else{try{JSON.parse(String(r[8]))}catch(e){bad.push('ردیف '+fa(i+2)+': JSON معتبر نیست')}}});
+ if(bad.length)return bad.slice(0,5).join(' | ');
+ return runUnifiedImport(scoped);
+}
 function runImport(k,rows){
+ if(['operations','cheques','receipts','issues','transfers','warehouseOps','inventory','cardex'].includes(k))return importOperationalScope(k,rows);
  if(['operations','cheques','receipts','issues','transfers','cardex'].includes(k))return importOperationalScope(k,rows);
  const t=templateSpec(k);if(!t)return 'نوع اطلاعات انتخاب‌شده معتبر نیست';
  const aliases=templateAliases(k,t);
@@ -1379,7 +1393,10 @@ function importProductionOrderRows(body){
  if(records.length===1)return 'هیچ دستور ساختی برای ورود وجود ندارد.';
  return runUnifiedImport(records);
 }
-function importRows(k,body){if(k==='boms')return importBomRows(body);if(k==='productionOrders')return importProductionOrderRows(body);const byName=(arr,n)=>arr.find(x=>x.name===String(n).trim());let errs=[];
+function importRows(k,body){
+ const byName=(arr,n)=>arr.find(x=>x.name===String(n).trim());
+ let errs=[];
+
  const mut=c=>{const nid_=p=>mkid(c,p);
   body.forEach((r,i)=>{const row=i+2;const E=m=>errs.push('ردیف '+fa(row)+': '+m);
    const party=n=>{const p=byName(c.parties,n);if(!p)E('شخص «'+n+'» یافت نشد');return p},src=n=>{const s=byName(c.sources,n);if(!s)E('منبع «'+n+'» یافت نشد');return s};
