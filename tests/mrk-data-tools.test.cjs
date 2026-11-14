@@ -63,3 +63,29 @@ test('refuses ambiguous partial headers instead of guessing a wrong column order
   assert.equal(result.rows.length, 0);
   assert.equal(result.matched, 1);
 });
+
+test('maps BOM formula columns by header when users reorder them', () => {
+  const result = mapImportRows([
+    ['فرمول تولید'],
+    ['نام ماده اولیه', 'مقدار مصرف در هر بچ', 'کد محصول', 'نام محصول', 'مقدار خروجی هر بچ', 'کد ماده اولیه', 'واحد ماده اولیه'],
+    ['آرد', 2.5, 'FG-01', 'نان', 10, 'RM-01', 'کیلوگرم']
+  ], ['کد محصول', 'نام محصول', 'مقدار خروجی هر بچ', 'کد ماده اولیه', 'نام ماده اولیه', 'مقدار مصرف در هر بچ', 'واحد ماده اولیه'], {
+    'کد محصول': ['کد کالا'],
+    'کد ماده اولیه': ['کد مواد']
+  });
+  assert.equal(result.mode, 'header-mapped');
+  assert.deepEqual(result.rows, [['FG-01', 'نان', 10, 'RM-01', 'آرد', 2.5, 'کیلوگرم']]);
+});
+
+test('maps production order fields including full JSON payload when columns are reordered', () => {
+  const result = mapImportRows([
+    ['اطلاعات تولید'],
+    ['عملیات مرتبط (JSON)', 'مقدار تولید', 'شماره دستور', 'اطلاعات کامل دستور (JSON)', 'تاریخ', 'کد محصول'],
+    ['[]', 25, 'PR-01', '{"id":"o1"}', '۱۴۰۵/۰۱/۰۲', 'FG-01']
+  ], ['شناسه دستور', 'شماره دستور', 'تاریخ', 'کد محصول', 'مقدار تولید', 'اطلاعات کامل دستور (JSON)', 'عملیات مرتبط (JSON)'], {
+    'شماره دستور': ['شماره سفارش ساخت'],
+    'تاریخ': ['تاریخ تولید']
+  });
+  assert.equal(result.mode, 'header-mapped');
+  assert.deepEqual(result.rows[0], ['', 'PR-01', '۱۴۰۵/۰۱/۰۲', 'FG-01', 25, '{"id":"o1"}', '[]']);
+});
