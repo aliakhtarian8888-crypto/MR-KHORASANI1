@@ -999,8 +999,19 @@ function runUnifiedImport(inputRows){
      if(o.code&&!state.accounts.some(a=>String(a.code)===String(o.code))){state.accounts.push(clone(o));stats.added++;if(o.taf)state.taf[o.code]=o.taf}else stats.skipped++;
      break;
     case'worker': add(state.workers||(state.workers=[]),o,['code','name']);break;
-    case'productionOrder': add(state.productionOrders||(state.productionOrders=[]),o,['orderNo']);state.productionSeq=Math.max(Number(state.productionSeq)||0,Number(String(o.orderNo||'').replace(/\\D/g,''))||0);break;
-    case'bom': add(state.boms||(state.boms=[]),o,['productId']);break;
+    case'productionOrder':{
+     const date=normDate(o.date);
+     if(!o.id||!o.orderNo||!o.productId||!date||String(date).slice(0,4)!==String(state.fy)){stats.errors.push('ردیف '+fa(entry.row)+': اطلاعات پایه یا تاریخ دستور ساخت معتبر نیست');break}
+     if(!state.goods.some(g=>g.id===o.productId)||!(state.warehouses||[]).some(w=>String(w.id)===String(o.materialWarehouse))||!(state.warehouses||[]).some(w=>String(w.id)===String(o.finishedWarehouse))){stats.errors.push('ردیف '+fa(entry.row)+': محصول یا انبارهای دستور ساخت در اطلاعات پایه یافت نشدند');break}
+     if(!Array.isArray(o.materials)||o.materials.some(m=>!state.goods.some(g=>g.id===m.g)||!(num(m.q)>0))){stats.errors.push('ردیف '+fa(entry.row)+': ردیف‌های مواد مصرفی دستور ساخت معتبر نیستند');break}
+     if(state.days[date]?.closed){stats.errors.push('ردیف '+fa(entry.row)+': تاریخ دستور ساخت بسته شده است');break}
+     add(state.productionOrders||(state.productionOrders=[]),o,['orderNo']);
+     state.productionSeq=Math.max(Number(state.productionSeq)||0,Number(String(o.orderNo||'').replace(/\D/g,''))||0);break;
+    }
+    case'bom':{
+     if(!o.productId||!state.goods.some(g=>g.id===o.productId)||!(num(o.batchQty)>0)||!Array.isArray(o.materials)||!o.materials.length||o.materials.some(m=>!state.goods.some(g=>g.id===m.g)||!(num(m.q)>0))){stats.errors.push('ردیف '+fa(entry.row)+': فرمول ساخت یا مواد اولیه آن معتبر نیست');break}
+     add(state.boms||(state.boms=[]),o,['productId']);break;
+    }
     case'day':{
      const key=String(entry.raw&&entry.raw[2]||entry.raw&&entry.raw[1]||'');
      if(key&&!state.days[key]){state.days[key]=clone(o);stats.added++}else stats.skipped++;
@@ -1143,7 +1154,7 @@ function importProductionOrderRows(body){
    if(isClosed(normDate(order.date)))throw new Error('روز دستور ساخت بسته شده است');
    if(!warehouseList().some(w=>w.id===order.materialWarehouse)||!warehouseList().some(w=>w.id===order.finishedWarehouse))throw new Error('شناسه انبارهای دستور در این پایگاه داده وجود ندارد');
    if(order.materials.some(m=>!S.goods.some(g=>g.id===m.g)||!(num(m.q)>0)))throw new Error('مواد یا مقادیر مصرف دستور معتبر نیست');
-   if(ops.some(op=>op.prodOrderId!==order.id||!op.type||!normDate(op.date)))throw new Error('عملیات مرتبط با شناسه دستور یا تاریخ آن تطبیق ندارد');
+   if(ops.length<2||!ops.some(op=>op.type==='حواله مصرف مواد تولید')||!ops.some(op=>op.type==='رسید محصول تولیدی')||ops.some(op=>op.prodOrderId!==order.id||!op.type||!normDate(op.date)))throw new Error('عملیات مرتبط ناقص است؛ حواله مصرف مواد و رسید محصول باید همراه دستور وارد شوند');
    addDataExcelRow(records,'productionOrder',order,{id:order.id,date:order.date,code:order.orderNo,name:r[4]||'',status:order.status,amount:order.quantity});
    ops.forEach(op=>addDataExcelRow(records,'operation',op,{id:op.id,date:op.date,opType:op.type,code:op.no,name:op.desc,status:op.status,amount:opAmt(op)}));
   }catch(e){errors.push('ردیف '+fa(row)+': JSON دستور یا عملیات مرتبط معتبر نیست')}
