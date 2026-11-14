@@ -126,9 +126,10 @@ test('builds a searchable cardex with opening and closing balances per good and 
   });
   assert.equal(result.movements.length, 1);
   assert.equal(result.movements[0].id, 'm1');
-  assert.equal(result.movements[0].balanceQty, 12);
+  assert.equal(result.movements[0].balanceQty, 15);
   assert.equal(result.opening[0].quantity, 10);
-  assert.equal(result.closing[0].quantity, 14);
+  assert.equal(result.closing.find(x=>x.warehouseId==='w1').quantity, 12);
+  assert.equal(result.closing.find(x=>x.warehouseId==='w2').quantity, 2);
 });
 
 test('person filter narrows visible cardex lines without changing actual stock balances', () => {
