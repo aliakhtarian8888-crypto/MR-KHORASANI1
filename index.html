@@ -1076,14 +1076,18 @@ function runUnifiedImport(inputRows){
   ordered.forEach(entry=>{
    const o=entry.obj||{};
    switch(entry.type){
-    case'meta':
-     if(Number(o.fy)&&Number(o.fy)!==Number(state.fy)){stats.warnings.push('تنظیمات سال مالی متفاوت وارد نشد؛ برای بازیابی کامل از پشتیبان JSON استفاده کنید');break}
+    case'meta':{
+     if(Number(o.fy)&&Number(o.fy)!==Number(state.fy)){stats.warnings.push('تنظیمات سال مالی متفاوت وارد نشد؛ برای بازیابی کامل از پشتیبان JSON استفاده کنید');stats.skipped++;break}
+     const before=JSON.stringify({company:state.company,settings:state.settings,roles:state.roles,taf:state.taf,lastInv:state.lastInv});
      if(o.company)state.company=state.company||o.company;
      if(o.settings)state.settings={...(state.settings||{}),...clone(o.settings)};
      if(o.roles)state.roles={...(state.roles||{}),...clone(o.roles)};
      if(o.taf)state.taf={...(state.taf||{}),...clone(o.taf)};
      if(o.lastInv)state.lastInv={...(state.lastInv||{}),...clone(o.lastInv)};
-     stats.skipped++;break;
+     const after=JSON.stringify({company:state.company,settings:state.settings,roles:state.roles,taf:state.taf,lastInv:state.lastInv});
+     if(before!==after)stats.added++;else stats.skipped++;
+     break;
+    }
     case'party': add(state.parties,o,['code']);break;
     case'good': add(state.goods,o,['code']);break;
     case'source': add(state.sources,o,['code','name']);break;
