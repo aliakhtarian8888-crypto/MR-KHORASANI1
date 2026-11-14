@@ -934,7 +934,29 @@ function treasuryPage(){const id=UI.tr||'cs';const td=today(),f=flows(td,td);
  const tile=(t,v,i)=>`<div class="kcard"><div class="kt">${t}</div><div class="kv">${fmt(v)}</div></div>`;
  return `<div class="kgrid">${tile('موجودی صندوق',B.ab['1101']||0)}${tile('موجودی بانک‌ها',B.ab['1201']||0)}${tile('موجودی تنخواه',B.ab['1301']||0)}${tile('دریافت امروز',f.rcv)}${tile('پرداخت امروز',f.pay)}${tile('خالص امروز',f.rcv-f.pay)}</div>`+chips(TR_TABS,id,'trTab')+repBlock(id)}
 ACT.trTab=p=>{UI.tr=p;render()};
-function chequesPage(){const id=UI.ck||'ck_in';return excelTransferPanel('cheques')+excelImportTemplatePanel('chequeEntries')+`<div class="tgrid">${['دریافت چک','پرداخت چک','وصول چک','برگشت چک','پاس چک پرداختی'].filter(n=>can('ck')).map(n=>`<button class="tbtn" data-a="goType" data-p="${n}"><span>${TI[n].ic}</span>${n}</button>`).join('')}</div>`+chips(CK_TABS,id,'ckTab')+repBlock(id)}
+function chequeRegisterRows(){
+ const filters={query:UI.chequeRegQuery||'',direction:UI.chequeRegDirection||''};
+ return MRKDataTools.buildChequeRegisterRows(Object.values(B.chq||{}),S.parties,S.sources,filters);
+}
+function chequeRegisterPage(){
+ const rows=chequeRegisterRows();
+ const tableRows=rows.map(c=>[
+  c.direction,fa(c.chequeDate),c.partyName,fa(c.partyCode),fa(c.sayad),c.bank||'—',
+  c.sourceName||'—',fa(c.dueDate),c.settlementDate?fa(c.settlementDate):'—',
+  fmt(c.amount),c.status
+ ]);
+ return '<div class="card"><div class="ftitle">دفتر چک‌های دریافتنی و پرداختنی</div><div class="grid2"><div><label>جست‌وجوی شخص، کد یا شناسه صیادی</label><input id="chequeRegQuery" value="'+esc(UI.chequeRegQuery||'')+'" placeholder="نام شخص، کد شخص یا ۱۶ رقم صیادی"></div><div><label>نوع چک</label><select id="chequeRegDirection">'+sel([['','همه چک‌ها'],['in','دریافتنی'],['out','پرداختنی']],UI.chequeRegDirection||'')+'</select></div></div><div class="row mt"><button class="btn pri" data-a="chequeRegSearch">جست‌وجو</button><button class="btn" data-a="chequeRegExport">خروجی Excel گزارش چک‌ها</button><button class="btn" data-a="exportBaseData" data-p="cheques">خروجی کامل قابل بازگردانی</button></div><div class="hint">گزارش از وضعیت واقعی چک‌های ثبت‌شده و رویدادهای وصول، برگشت و پاس استخراج می‌شود. خروجی کامل JSON برای بازگردانی، و گزارش جدولی برای بررسی و ارائه استفاده می‌شود.</div></div><div class="card"><div class="ftitle">نتایج ('+fa(rows.length)+' چک)</div>'+tbl(['نوع','تاریخ ثبت','شخص','کد شخص','شناسه صیادی','بانک','منبع پرداخت','سررسید','تاریخ تسویه','مبلغ (ریال)','وضعیت'],tableRows)+'</div>';
+}
+ACT.chequeRegSearch=()=>{UI.chequeRegQuery=$('#chequeRegQuery')?.value||'';UI.chequeRegDirection=$('#chequeRegDirection')?.value||'';render()};
+ACT.chequeRegExport=()=>{
+ const rows=chequeRegisterRows();
+ const data=[['گزارش چک‌های دریافتنی و پرداختنی'],['نوع','شناسه رکورد','تاریخ ثبت','نام شخص','کد شخص','شناسه صیادی','بانک','منبع پرداخت','سررسید','تاریخ تسویه/وصول','مبلغ (ریال)','وضعیت']];
+ rows.forEach(c=>data.push([c.direction,c.id,c.chequeDate,c.partyName,c.partyCode,c.sayad,c.bank,c.sourceName,c.dueDate,c.settlementDate,c.amount,c.status]));
+ if(!rows.length)return toast('چکی برای خروجی با فیلترهای فعلی پیدا نشد.');
+ saveBlob(fname('گزارش چک‌های دریافتنی و پرداختنی','xlsx'),xlsxBlob(data,'گزارش چک‌ها'));
+ audit('خروجی','Excel – گزارش چک‌ها','چک‌های دریافتنی و پرداختنی','',rows.length);save();
+};
+function chequesPage(){const id=UI.ck||'ck_in';return excelTransferPanel('cheques')+excelImportTemplatePanel('chequeEntries')+chequeRegisterPage()+`<div class="tgrid">${['دریافت چک','پرداخت چک','وصول چک','برگشت چک','پاس چک پرداختی'].filter(n=>can('ck')).map(n=>`<button class="tbtn" data-a="goType" data-p="${n}"><span>${TI[n].ic}</span>${n}</button>`).join('')}</div>`+chips(CK_TABS,id,'ckTab')+repBlock(id)}
 ACT.ckTab=p=>{UI.ck=p;render()};
 function reportsPage(){const g=UI.rg||REPGROUPS[0][0],grp=REPGROUPS.find(x=>x[0]===g)||REPGROUPS[0];if(!REP[UI.rep]||!grp[1].includes(UI.rep))UI.rep=grp[1][0];
  return chips(REPGROUPS.map(x=>[x[0],x[0]]),grp[0],'rg')+chips(grp[1].map(k=>[k,REP[k].t]),UI.rep,'rp')+repBlock(UI.rep)}
