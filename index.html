@@ -1001,11 +1001,184 @@ async function onFile(file){
  try{
   const rows=await readTable(file);
   let e;
-  if(UI.impKind==='data')e=runUnifiedImport(rows);
-  else e=runImport(UI.impKind,rows);
+  if(UI.impKind==='data'){
+   const kind=$('#dataImportKind')?.value||UI.dataImportKind||'unified';
+   e=kind==='unified'?runUnifiedImport(rows):runImport(kind,rows);
+  }else e=runImport(UI.impKind,rows);
   if(e)toast(e);
  }catch(x){toast('خواندن یا ورود فایل ناموفق بود ('+x.message+'). داده‌های فعلی تغییر نکردند.')}
 }
+
+const DATA_EXCEL_HEADERS=['نوع رکورد','شناسه','تاریخ','نوع عملیات','کد','نام / شرح','وضعیت','مقدار','JSON کامل رکورد'];
+const DATA_EXCEL_ALIASES={'نوع رکورد':['نوع داده','گروه رکورد','record type'],'شناسه':['شناسه رکورد','id'],'تاریخ':['تاریخ سند','تاریخ عملیات','date'],'نوع عملیات':['نوع سند','عملیات','operation type'],'کد':['کد کالا','کد شخص','شماره فاکتور'],'نام / شرح':['نام','نام کالا','شرح','توضیحات'],'وضعیت':['وضعیت سند','status'],'مقدار':['تعداد','مبلغ','مقدار ریالی'],'JSON کامل رکورد':['اطلاعات کامل','محتوای کامل','payload json','record json']};
+function addDataExcelRow(rows,type,obj,meta={}){
+ const json=JSON.stringify(obj);
+ rows.push([type,meta.id||obj.id||'',meta.date||obj.date||'',meta.opType||obj.type||'',meta.code||obj.code||obj.inv||'',meta.name||obj.name||obj.desc||'',meta.status||obj.status||'',meta.amount==null?'':meta.amount,json]);
+}
+function unifiedExcelRows(){
+ const rows=[DATA_EXCEL_HEADERS];
+ addDataExcelRow(rows,'meta',{fy:S.fy,company:S.company,settings:S.settings,roles:S.roles,taf:S.taf,lastInv:S.lastInv,seq:S.seq,docSeq:S.docSeq,productionSeq:S.productionSeq,autoPdf:S.autoPdf,fyClosed:S.fyClosed,theme:S.theme,logo:S.logo,email:S.email});
+ (S.parties||[]).forEach(x=>addDataExcelRow(rows,'party',x,{code:x.code,name:x.name}));
+ (S.goods||[]).forEach(x=>addDataExcelRow(rows,'good',x,{code:x.code,name:x.name}));
+ (S.sources||[]).forEach(x=>addDataExcelRow(rows,'source',x,{code:x.code,name:x.name,amount:x.open}));
+ (S.warehouses||[]).forEach(x=>addDataExcelRow(rows,'warehouse',x,{code:x.code,name:x.name}));
+ (S.accounts||[]).forEach(x=>addDataExcelRow(rows,'account',x,{code:x.code,name:x.name}));
+ (S.workers||[]).forEach(x=>addDataExcelRow(rows,'worker',x,{code:x.code,name:x.name}));
+ (S.productionOrders||[]).forEach(x=>addDataExcelRow(rows,'productionOrder',x,{code:x.orderNo,name:x.name,status:x.status}));
+ (S.boms||[]).forEach(x=>addDataExcelRow(rows,'bom',x,{code:x.id,name:x.name}));
+ (S.ops||[]).forEach(x=>addDataExcelRow(rows,'operation',x,{id:x.id,date:x.date,opType:x.type,code:x.inv||x.ref||x.no,name:x.desc,status:x.status,amount:opAmt(x)}));
+ Object.entries(S.days||{}).forEach(([date,value])=>addDataExcelRow(rows,'day',value,{id:date,date,name:value.user,status:value.closed?'بسته':'باز'}));
+ (S.audit||[]).forEach(x=>addDataExcelRow(rows,'audit',x,{id:x.id,date:x.jd,opType:x.act,code:x.ent,name:x.user}));
+ if(S.carry) (S.carry||[]).forEach(x=>addDataExcelRow(rows,'openingAccount',x,{code:x.acc,name:x.taf}));
+ if(S.invCarry) Object.entries(S.invCarry).forEach(([key,value])=>addDataExcelRow(rows,'openingStock',{key,...value},{id:key,name:'موجودی افتتاحیه'}));
+ (S.carryChq||[]).forEach(x=>addDataExcelRow(rows,'carryCheque',x,{id:x.id,name:x.sayad}));
+ (S.carryInvs||[]).forEach(x=>addDataExcelRow(rows,'carryInvoice',x,{code:x.no,name:x.type}));
+ Object.entries(S.archive||{}).forEach(([year,value])=>{
+  (value.ops||[]).forEach(x=>addDataExcelRow(rows,'archivedOperation',x,{id:x.id,date:x.date,opType:x.type,code:x.inv||x.ref||x.no,name:'سال '+year+' — '+(x.desc||''),status:x.status}));
+  Object.entries(value.days||{}).forEach(([date,day])=>addDataExcelRow(rows,'archivedDay',{year,date,value:day},{id:year+'|'+date,date,name:'روز آرشیوی '+year}));
+ });
+ Object.entries(S.yearStats||{}).forEach(([year,value])=>addDataExcelRow(rows,'yearStats',{year,...value},{id:year,name:'خلاصه سال مالی '+year}));
+ return rows;
+}
+function runUnifiedImport(inputRows){
+ const mapped=MRKDataTools.mapImportRows(inputRows,DATA_EXCEL_HEADERS,DATA_EXCEL_ALIASES);
+ if(mapped.mode==='empty'||!mapped.rows.length)return 'ردیف اطلاعاتی پیدا نشد.';
+ if(mapped.matched<2)return 'سرستون‌های خروجی یکپارچه شناسایی نشدند. برای ورود کامل، فایل خروجی یکپارچه MR را انتخاب کنید.';
+ const entries=[],bad=[];
+ mapped.rows.forEach((r,i)=>{
+  const type=String(r[0]||'').trim(),raw=String(r[8]||'').trim();
+  if(!type&&!raw)return;
+  if(!raw){bad.push('ردیف '+fa(i+2)+': JSON کامل رکورد خالی است');return}
+  try{entries.push({type,obj:JSON.parse(raw),row:i+2})}catch(e){bad.push('ردیف '+fa(i+2)+': JSON رکورد معتبر نیست')}
+ });
+ if(bad.length)return bad.slice(0,5).join(' | ');
+ if(!entries.length)return 'هیچ رکورد قابل ورودی یافت نشد.';
+ const stats={added:0,skipped:0,addedOps:[],warnings:[],errors:[]};
+ const mut=state=>{
+  const add=(arr,obj,keys)=>{
+   if(!Array.isArray(arr))return false;
+   const exists=arr.some(x=>(obj.id&&x.id===obj.id)||keys.some(k=>obj[k]!=null&&obj[k]!==''&&String(x[k])===String(obj[k])));
+   if(exists){stats.skipped++;return false}
+   arr.push(clone(obj));stats.added++;return true;
+  };
+  const priority={meta:0,account:1,warehouse:2,party:3,source:4,good:5,worker:6,productionOrder:7,bom:8,day:9,audit:10,operation:20,archivedOperation:30,archivedDay:31,openingAccount:32,openingStock:33,carryCheque:34,carryInvoice:35,yearStats:36};
+  const ordered=entries.slice().sort((a,b)=>(priority[a.type]??99)-(priority[b.type]??99));
+  ordered.forEach(entry=>{
+   const o=entry.obj||{};
+   switch(entry.type){
+    case'meta':
+     if(Number(o.fy)&&Number(o.fy)!==Number(state.fy)){stats.warnings.push('تنظیمات سال مالی متفاوت وارد نشد؛ برای بازیابی کامل از پشتیبان JSON استفاده کنید');break}
+     if(o.company)state.company=state.company||o.company;
+     if(o.settings)state.settings={...(state.settings||{}),...clone(o.settings)};
+     if(o.roles)state.roles={...(state.roles||{}),...clone(o.roles)};
+     if(o.taf)state.taf={...(state.taf||{}),...clone(o.taf)};
+     if(o.lastInv)state.lastInv={...(state.lastInv||{}),...clone(o.lastInv)};
+     stats.added++;break;
+    case'party': add(state.parties,o,['code']);break;
+    case'good': add(state.goods,o,['code']);break;
+    case'source': add(state.sources,o,['code','name']);break;
+    case'warehouse':
+     if(add(state.warehouses||(state.warehouses=[]),o,['code','name'])&&o.acc&&!state.accounts.some(a=>a.code===o.acc))state.accounts.push({code:String(o.acc),name:'موجودی کالا – '+String(o.name||'انبار')});
+     break;
+    case'account':
+     if(o.code&&!state.accounts.some(a=>String(a.code)===String(o.code))){state.accounts.push(clone(o));stats.added++;if(o.taf)state.taf[o.code]=o.taf}else stats.skipped++;
+     break;
+    case'worker': add(state.workers||(state.workers=[]),o,['code','name']);break;
+    case'productionOrder': add(state.productionOrders||(state.productionOrders=[]),o,['orderNo']);break;
+    case'bom': add(state.boms||(state.boms=[]),o,['name']);break;
+    case'day':{
+     const date=String(entry.obj.date||entry.row&&entries.find(x=>x===entry)?.obj.date||'');
+     const key=date||String(r[1]||'');
+     if(key&&!state.days[key]){state.days[key]=clone(o);stats.added++}else stats.skipped++;
+     break;
+    }
+    case'audit':
+     state.audit=Array.isArray(state.audit)?state.audit:[];
+     if(!state.audit.some(x=>x.id&&x.id===o.id)){state.audit.push(clone(o));stats.added++}else stats.skipped++;
+     break;
+    case'operation':{
+     if(!o.type||!TI[o.type]){stats.errors.push('ردیف '+fa(entry.row)+': نوع عملیات «'+String(o.type||'')+'» در این نسخه شناخته نشد');break}
+     if(o.id&&state.ops.some(x=>x.id===o.id)){stats.skipped++;break}
+     if(['فروش','خرید'].includes(o.type)&&state.ops.some(x=>x.status==='active'&&x.type===o.type&&Number(x.inv)===Number(o.inv))){stats.skipped++;stats.warnings.push('فاکتور '+o.type+' شماره '+fa(o.inv)+' به‌دلیل شماره تکراری وارد نشد');break}
+     const date=normDate(o.date);if(!date){stats.errors.push('ردیف '+fa(entry.row)+': تاریخ عملیات معتبر نیست');break}
+     if(o.status!=='deleted'&&Number(date.slice(0,4))!==Number(state.fy)){stats.errors.push('ردیف '+fa(entry.row)+': عملیات خارج از سال مالی فعال است؛ آرشیو سال‌های قبل را از مسیر پشتیبان JSON بازیابی کنید');break}
+     if(state.days[date]?.closed&&!o.frozen&&o.status!=='deleted'){stats.errors.push('ردیف '+fa(entry.row)+': روز '+fa(date)+' بسته است و عملیات بدون نسخه ثابت قابل ورود نیست');break}
+     const op=clone(o);op.id=op.id||mkid(state,'o');op.date=date;
+     const usedNo=Number(op.no)||0;
+     if(!usedNo||state.ops.some(x=>Number(x.no)===usedNo))op.no=++state.docSeq;else state.docSeq=Math.max(Number(state.docSeq)||0,usedNo);
+     op.seq=Number(op.seq)||Number(state.seq)||0;state.seq=Math.max(Number(state.seq)||0,op.seq);
+     op.user=op.user||UI.user.name;op.status=op.status||'active';
+     state.ops.push(op);stats.added++;if(op.status==='active')stats.addedOps.push(op.id);
+     break;
+    }
+    case'archivedOperation':{
+     const year=String(o.date||'').slice(0,4);if(!year){stats.errors.push('ردیف '+fa(entry.row)+': تاریخ عملیات آرشیوی نامعتبر است');break}
+     state.archive=state.archive||{};state.archive[year]=state.archive[year]||{ops:[],days:{}};
+     if((state.archive[year].ops||[]).some(x=>x.id===o.id)){stats.skipped++;break}
+     state.archive[year].ops.push(clone(o));stats.added++;break;
+    }
+    case'archivedDay':{
+     const year=String(o.year||''),date=String(o.date||'');if(!year||!date){stats.errors.push('روز آرشیوی ناقص است');break}
+     state.archive=state.archive||{};state.archive[year]=state.archive[year]||{ops:[],days:{}};
+     state.archive[year].days=state.archive[year].days||{};if(!state.archive[year].days[date]){state.archive[year].days[date]=clone(o.value||{});stats.added++}else stats.skipped++;
+     break;
+    }
+    case'openingAccount': state.carry=Array.isArray(state.carry)?state.carry:[];if(!state.carry.some(x=>x.acc===o.acc&&x.taf===o.taf)) {state.carry.push(clone(o));stats.added++}else stats.skipped++;break;
+    case'openingStock': state.invCarry=state.invCarry||{};if(o.key&&!state.invCarry[o.key]){state.invCarry[o.key]={q:num(o.q),v:num(o.v),layers:Array.isArray(o.layers)?clone(o.layers):[]};state.carry=state.carry||[];stats.added++}else stats.skipped++;break;
+    case'carryCheque': state.carryChq=Array.isArray(state.carryChq)?state.carryChq:[];if(!state.carryChq.some(x=>x.id===o.id)){state.carryChq.push(clone(o));stats.added++}else stats.skipped++;break;
+    case'carryInvoice': state.carryInvs=Array.isArray(state.carryInvs)?state.carryInvs:[];if(!state.carryInvs.some(x=>x.type===o.type&&Number(x.no)===Number(o.no))){state.carryInvs.push(clone(o));stats.added++}else stats.skipped++;break;
+    case'yearStats': state.yearStats=state.yearStats||{};if(!state.yearStats[o.year]){const x=clone(o);delete x.year;state.yearStats[o.year]=x;stats.added++}else stats.skipped++;break;
+    default: stats.warnings.push('نوع رکورد پشتیبانی‌نشده: '+entry.type);
+   }
+  });
+ };
+ const probe=clone(S);mut(probe);
+ if(stats.errors.length)return stats.errors.slice(0,5).join(' | ');
+ if(!stats.added)return 'رکورد جدیدی وارد نشد؛ '+fa(stats.skipped)+' مورد تکراری یا موجود تشخیص داده شد.';
+ const check=build(probe),badNew=check.errs.filter(e=>stats.addedOps.includes(e.op));
+ if(badNew.length)return 'ورود متوقف شد؛ اعتبارسنجی عملیات جدید خطا داد: '+badNew.slice(0,4).map(e=>e.msg).join(' | ');
+ if(!commit(mut,'ورود یکپارچه از اکسل','داده‌ها','ورود دسته‌ای','','رکوردهای جدید: '+stats.added))return 'ورود انجام نشد؛ کنترل‌های حسابداری یا توازن سند اجازه ثبت ندادند.';
+ const warning=stats.warnings.length?' هشدار: '+stats.warnings.slice(0,3).join('؛ '):'';
+ toast('ورود یکپارچه انجام شد؛ '+fa(stats.added)+' رکورد جدید، '+fa(stats.skipped)+' مورد تکراری رد شد.'+warning);
+ return '';
+}
+function dataCenterPage(){
+ const options=[['unified','خروجی/ورودی یکپارچه MR (تمام انواع عملیات)'],['parties','اشخاص'],['goods','کالاها و موجودی اول دوره تمام انبارها'],['sources','صندوق و بانک و منابع مالی'],['coa','کدینگ حساب‌ها'],['rp','دریافت و پرداخت خارج از فاکتور'],['exp','هزینه‌ها'],['inv','فاکتورهای فروش و خرید']];
+ return '<div class="card"><div class="ftitle">مرکز یکپارچه ورود و خروج اطلاعات</div><div class="hint">خروجی یکپارچه شامل اطلاعات پایه، گردش‌های ثبت‌شده، جزئیات کامل عملیات، اسناد حذف‌شده، گردش چک‌ها، حواله و انتقال انبار، سند دستی، استهلاک، تولید و اطلاعات آرشیوی است. برای بازگردانی دقیق از همین ساختار استفاده کنید.</div><div class="row mt"><button class="btn pri" data-a="dataExcelExport">⬇️ دانلود اکسل یکپارچه اطلاعات موجود</button><button class="btn" data-a="bakDl">💾 پشتیبان کامل JSON</button></div><div class="hint">اکسل، اطلاعات واقعی موجود را صادر می‌کند و قالب خالی نیست. پشتیبان JSON برای بازیابی کامل و جایگزینی پایگاه کاری، از جمله آرشیو سال‌های گذشته، مسیر مطمئن‌تر است.</div></div>'+
+ '<div class="card"><div class="ftitle">ورود اطلاعات از Excel / Google Sheets</div><label>نوع فایل یا اطلاعات</label><select id="dataImportKind" class="wide">'+sel(options,UI.dataImportKind||'unified')+'</select><div class="row mt"><button class="btn pri" data-a="dataPaste">📋 چسباندن از اکسل</button><label class="btn filebtn">📂 انتخاب فایل Excel<input type="file" data-imp="data" accept=".xlsx,.xls,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/octet-stream,*/*"></label></div><div class="hint">در ورود عادی، عنوان ستون‌ها شناسایی و جابه‌جایی ستون‌ها اصلاح می‌شود. در ورود یکپارچه MR، جزئیات JSON هر رکورد خوانده می‌شود تا انواع پیچیده عملیات نیز بدون حذف اقلام و پرداخت‌ها بازیابی شوند. رکوردهای تکراری با شناسه یا کد شناسایی و دوباره ثبت نمی‌شوند.</div></div>'+
+ '<div class="card"><div class="ftitle">قالب‌های استاندارد ورود</div>'+Object.keys(TPL).map(k=>'<div class="orow"><div><b>'+esc(TPL[k].n)+'</b><div class="hint">'+esc(TPL[k].h.slice(0,4).join('، '))+'</div></div><div class="acts"><button class="btn sm" data-a="tpl" data-p="'+k+'">دانلود قالب</button><button class="btn sm" data-a="pasteImp" data-p="'+k+'">چسباندن</button></div></div>').join('')+'</div>'+
+ '<div class="card"><div class="ftitle">قواعد ایمنی ورود گروهی</div><ul class="hint"><li>ابتدا فایل را در محیط آزمایشی وارد و گزارش‌های مربوط را کنترل کنید.</li><li>مبالغ و تعدادها باید عددی و تاریخ‌ها در سال مالی فعال باشند.</li><li>فاکتور تکراری یا عملیات مربوط به روز بسته‌شده بدون نسخه ثابت وارد نمی‌شود.</li><li>ورود از فایل، عملیات را از مسیر موتور حسابداری عبور می‌دهد؛ گزارش‌ها مستقیماً قابل ویرایش نیستند.</li><li>دسترسی ورود و خروج تابع مجوز «پشتیبان و خروجی» کاربر است.</li></ul></div>';
+}
+function exportBaseData(k){
+ let rows=[],name='';
+ if(k==='parties'){name='اشخاص';rows=[['کد','نام','نوع','تلفن','نشانی','مانده اول دوره','وضعیت مانده'],...S.parties.map(p=>[p.code||'',p.name,p.kind,p.phone||'',p.addr||'',num(p.open),p.side==='bs'?'بستانکار':'بدهکار'])]}
+ else if(k==='goods'){
+  name='کالاها و موجودی تمام انبارها';
+  const whs=warehouseList(),heads=['کد','نام کالا','نوع کالا','واحد','قیمت فروش','حداقل موجودی'];
+  whs.forEach(w=>heads.push('موجودی فعلی - '+w.name,'ارزش فعلی - '+w.name,'تعداد اول دوره - '+w.name,'بهای واحد اول دوره - '+w.name));
+  rows=[heads];
+  S.goods.forEach(g=>{const row=[g.code||'',g.name,g.kind||'commercial',g.unit||'عدد',num(g.price),num(g.minQty)];whs.forEach(w=>{const cur=B.inv[g.id+'|'+w.id]||{q:0,v:0};const op=w.id==='1'?{q:g.q1,c:g.c1}:w.id==='2'?{q:g.q2,c:g.c2}:((g.opening||{})[w.id]||{});row.push(num(cur.q),num(cur.v),num(op.q),num(op.c))});rows.push(row)});
+ }else if(k==='sources'){name='منابع مالی';rows=[['کد','نام','نوع','حساب معین','مانده اول دوره','مانده فعلی'],...S.sources.map(x=>[x.code||'',x.name,x.kind,x.acc,num(x.open),num(B.sb[x.id])])]}
+ else if(k==='coa'){name='کدینگ حساب‌ها';rows=[['کد حساب','نام حساب','نوع تفصیلی'],...S.accounts.map(a=>[a.code,a.name,S.taf[a.code]||'ندارد'])]}
+ else {return toast('خروجی این بخش از طریق گزارش مربوط انجام می‌شود')}
+ saveBlob(fname('اطلاعات موجود '+name,'xlsx'),xlsxBlob(rows,name));
+ audit('خروجی','Excel – اطلاعات موجود',name,'',rows.length-1);save();toast('اطلاعات واقعی '+name+' در فایل اکسل دانلود شد.');
+}
+ACT.exportBaseData=k=>exportBaseData(k);
+ACT.dataExcelExport=()=>{
+ const rows=unifiedExcelRows();
+ saveBlob(fname('خروجی یکپارچه MR','xlsx'),xlsxBlob(rows,'اطلاعات یکپارچه MR'));
+ audit('خروجی','Excel یکپارچه','تمام اطلاعات','',rows.length-1);save();
+ toast('خروجی یکپارچه شامل '+fa(rows.length-1)+' رکورد اطلاعاتی دانلود شد.');
+};
+ACT.dataPaste=()=>{
+ const kind=$('#dataImportKind')?.value||'unified',m=document.createElement('div');m.className='modal';
+ m.innerHTML='<div class="mbox"><b>چسباندن داده از Excel</b><p>محتوای سلول‌ها را از Excel یا Google Sheets کپی و در کادر زیر جای‌گذاری کنید. عنوان‌ها و ترتیب ستون‌ها به‌صورت خودکار بررسی می‌شوند.</p><textarea id="dataPasteTa" rows="9" style="width:100%;font:inherit;border:1px solid #cbd3df;border-radius:10px;padding:8px" placeholder="سلول‌ها را اینجا بچسبانید"></textarea><div class="row mt"><button class="btn pri" id="dataPasteOk">تشخیص و ورود</button><button class="btn" id="dataPasteNo">انصراف</button></div></div>';
+ document.body.appendChild(m);setTimeout(()=>m.querySelector('#dataPasteTa').focus(),50);
+ m.querySelector('#dataPasteNo').onclick=()=>m.remove();
+ m.querySelector('#dataPasteOk').onclick=()=>{const txt=m.querySelector('#dataPasteTa').value;if(!txt.trim())return toast('داده‌ای چسبانده نشده است');const data=parseTable(txt);const e=kind==='unified'?runUnifiedImport(data):runImport(kind,data);if(!e)m.remove()};
+};
+document.addEventListener('change',e=>{if(e.target?.id==='dataImportKind')UI.dataImportKind=e.target.value});
 ACT.tplCopy=async k=>{const t=templateSpec(k);const ok=await copyText([t.h,t.s].map(r=>r.join('\t')).join('\n'));toast(ok?'قالب کپی شد. هنگام ورود، ستون‌ها با عنوانشان شناسایی می‌شوند.':'کپی خودکار ممکن نشد؛ ستون‌ها: '+t.h.join(' | '))};
 ACT.pasteImp=k=>{const t=templateSpec(k);const m=document.createElement('div');m.className='modal';m.innerHTML='<div class="mbox"><b>چسباندن داده از اکسل – '+esc(t.n)+'</b><p>عنوان ستون‌ها قابل جابه‌جایی است؛ برنامه سطر عنوان را پیدا و ستون‌ها را مرتب می‌کند.</p><textarea id="pasteTa" rows="8" style="width:100%;font:inherit;border:1px solid #cbd3df;border-radius:10px;padding:8px" placeholder="سلول‌های کپی‌شده از Excel یا Google Sheets را اینجا بچسبانید"></textarea><div class="row mt"><button class="btn pri" id="pOk">تشخیص ستون‌ها و ورود</button><button class="btn" id="pNo">انصراف</button></div></div>';document.body.appendChild(m);setTimeout(()=>m.querySelector('#pasteTa').focus(),50);m.querySelector('#pNo').onclick=()=>m.remove();m.querySelector('#pOk').onclick=()=>{const txt=m.querySelector('#pasteTa').value;if(!txt.trim())return toast('چیزی چسبانده نشده است');const e=runImport(k,parseTable(txt));if(!e)m.remove()}};
 function importRows(k,body){const byName=(arr,n)=>arr.find(x=>x.name===String(n).trim());let errs=[];
@@ -1162,9 +1335,9 @@ ACT.syncSave=async()=>{const ok=await syncNow(true);if(ok)toast('همگام‌س
 /* ---------- حسابرسی، منو، قالب کلی ---------- */
 function guestAuditPanel(){if(UI.guestMode||!UI.user||!['مدیر سیستم','مدیر عامل'].includes(UI.user.role))return '';return `<div class="card mt"><div class="ftitle">گزارش نشست‌های مهمان وب</div><div class="hint">گزارش مدیریتی رویدادهای نشست مهمان را شامل ورود و خروج، مشاهده بخش‌ها، تعامل با کنترل‌ها، تغییر فیلدهای فرم و ثبت/ویرایش/حذف عملیات نشان می‌دهد. داده‌های کاری در sessionStorage همان تب مرورگر نگهداری و با خروج یا انقضای نشست پاک می‌شوند. در گزارش فقط خلاصه‌های پاک‌سازی‌شده اسناد و ارقام عملیاتی ثبت می‌شود؛ نام اشخاص، اطلاعات تماس، رمز، شماره حساب/کارت و متن آزاد فرم‌ها حذف می‌شوند. این گزارش جدا از دفاتر و اطلاعات شرکت است.</div><button class="btn pri wide mt" data-a="loadGuestAudit">دریافت گزارش نشست‌های مهمان</button><div id="guestAuditBox" class="mt"></div></div>`}
 function auditPage(){return repBlock('au')+guestAuditPanel()}
-const PAGES={dash:['🏠','داشبورد',dashPage],production:['🏭','تولید',productionPage],ops:['✍️','ثبت عملیات',opsPage],treasury:['🏦','خزانه و نقدینگی',treasuryPage],cheques:['📄','مدیریت چک‌ها',chequesPage],reports:['📊','گزارش‌ها',reportsPage],base:['👥','اشخاص و کالا',basePage],crm:['🤝','مشتریان (CRM)',crmPage],kpi:['🎯','شاخص‌ها (KPI)',kpiPage],close:['🔒','بستن روز',closePage],fy:['📅','سال مالی',fyPage],audit:['🕵️','مسیر حسابرسی',auditPage],settings:['⚙️','تنظیمات و کنترل',settingsPage],more:['☰','همهٔ بخش‌ها',morePage]};
+const PAGES={dash:['🏠','داشبورد',dashPage],production:['🏭','تولید',productionPage],ops:['✍️','ثبت عملیات',opsPage],treasury:['🏦','خزانه و نقدینگی',treasuryPage],cheques:['📄','مدیریت چک‌ها',chequesPage],reports:['📊','گزارش‌ها',reportsPage],base:['👥','اشخاص و کالا',basePage],data:['📥','ورود و خروج یکپارچه',dataCenterPage],crm:['🤝','مشتریان (CRM)',crmPage],kpi:['🎯','شاخص‌ها (KPI)',kpiPage],close:['🔒','بستن روز',closePage],fy:['📅','سال مالی',fyPage],audit:['🕵️','مسیر حسابرسی',auditPage],settings:['⚙️','تنظیمات و کنترل',settingsPage],more:['☰','همهٔ بخش‌ها',morePage]};
 function morePage(){return `<div class="tgrid">${Object.entries(PAGES).filter(([k])=>k!=='more'&&k!=='dash'&&canPage(k)).map(([k,v],i)=>`<button class="tbtn" data-a="go" data-p="${k}"><span style="background:var(--i${i%8+1})" class="ico">${v[0]}</span>${v[1]}</button>`).join('')}</div>`}
-const PERM_OF={dash:'dash',ops:'rp',treasury:'tre',cheques:'rep',reports:'rep',base:'bs',crm:'crm',kpi:'kpi',close:'cl',fy:'fy',audit:'aud',production:'prod',settings:'set',more:null};
+const PERM_OF={dash:'dash',ops:'rp',treasury:'tre',cheques:'rep',reports:'rep',base:'bs',data:'bk',crm:'crm',kpi:'kpi',close:'cl',fy:'fy',audit:'aud',production:'prod',settings:'set',more:null};
 const canPage=k=>k==='ops'?(can('rp')||can('sl')||can('pu')||can('ex')||can('ck')||can('tr')):(!PERM_OF[k]||can(PERM_OF[k]));
 function header(){const pg=PAGES[UI.page]||PAGES.dash;return `<header><div class="hrow"><div class="brand">${logoSvg(S.logo,38)}<div><b>${esc(S.company)}</b><small>${esc(pg[1])} — سال مالی ${fa(S.fy)} <span id="syncDot">${dotText()}</span></small></div></div><div class="usr"><button class="chipu" data-a="logout" title="تغییر اکانت و نقش کاربر">🔁 ${esc(UI.user.name)}</button></div></div><div class="topbar">${Object.entries(PAGES).filter(([k])=>k!=='more'&&canPage(k)).map(([k,v],i)=>`<button class="tb2${UI.page===k?' on':''}" data-a="go" data-p="${k}"><span class="ico" style="background:var(--i${i%8+1})">${v[0]}</span>${v[1]}</button>`).join('')}</div></header>`}
 function nav(){const it=[['dash','🏠','خانه'],['ops','✍️','عملیات'],['production','🏭','تولید'],['reports','📊','گزارش‌ها'],['more','☰','بیشتر']];return `<nav>${it.map(([k,i,t])=>`<button class="${UI.page===k?'on':''}" data-a="go" data-p="${k}"><span>${i}</span>${t}</button>`).join('')}</nav>`}
