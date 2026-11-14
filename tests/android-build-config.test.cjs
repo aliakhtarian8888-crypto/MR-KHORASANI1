@@ -11,7 +11,7 @@ test('Android Gradle project is defined with a compatible AGP and Gradle pair', 
   const settings = read('android/settings.gradle');
   const build = read('android/build.gradle');
   const app = read('android/app/build.gradle');
-  assert.match(settings, /include\\s+['"]:app['"]/);
+  assert.match(settings, /include\\(['"]:app['"]\\)/);
   assert.match(build, /com\\.android\\.application.*8\\.7\\.3/);
   assert.match(app, /compileSdk\\s+35/);
   assert.match(app, /minSdk\\s+23/);
