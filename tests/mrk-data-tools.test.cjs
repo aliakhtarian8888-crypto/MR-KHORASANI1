@@ -163,3 +163,16 @@ test('filters unified record export scopes without losing complete JSON payloads
   assert.deepEqual(selectScopeRows(rows,'receipts').slice(1).map(r=>r[1]),['c']);
   assert.equal(selectScopeRows(rows,'cheques')[1][8],'{"id":"a"}');
 });
+
+test('searches cardex movements by party code as well as the party name', () => {
+  const { buildCardexLedger } = require('../mrk-data-tools.js');
+  const result = buildCardexLedger({
+    goods:[{id:'g',code:'P-1',name:'کالا'}],
+    warehouses:[{id:'w',name:'اصلی'}],
+    openingRows:[],
+    movements:[{id:'x',date:'1405/01/01',g:'g',w:'w',q:1,v:5,partyName:'شرکت آلفا',partyCode:'C-204'}],
+    filters:{from:'1405/01/01',to:'1405/01/31',partyQuery:'C-204'}
+  });
+  assert.equal(result.movements.length,1);
+  assert.equal(result.movements[0].partyName,'شرکت آلفا');
+});
