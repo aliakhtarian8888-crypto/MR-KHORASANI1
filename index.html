@@ -1396,6 +1396,102 @@ function importProductionOrderRows(body){
 function importRows(k,body){
  const byName=(arr,n)=>arr.find(x=>x.name===String(n).trim());
  let errs=[];
+ if(k==='warehouses'){
+  const mut=c=>{
+   c.warehouses=c.warehouses||[];
+   body.forEach(r=>{
+    const name=String(r[1]||'').trim(),sourceId=String(r[0]||'').trim(),requestedAcc=String(r[2]||'').trim();
+    if(!name||c.warehouses.some(w=>(sourceId&&String(w.id)===sourceId)||String(w.name).trim()===name))return;
+    let acc=requestedAcc,existing=acc&&c.accounts.find(a=>String(a.code)===acc);
+    if(existing&&existing.name!=='موجودی کالا – '+name)acc='';
+    if(!acc){const used=c.warehouses.map(w=>Number(w.acc)||0);let code=Math.max(1601,...used)+1;while(c.accounts.some(a=>String(a.code)===String(code)))code++;acc=String(code)}
+    const id=sourceId||mkid(c,'w');c.warehouses.push({id,name,acc});
+    if(!c.accounts.some(a=>String(a.code)===acc))c.accounts.push({code:acc,name:'موجودی کالا – '+name});
+   });
+  };
+  const probe=clone(S);mut(probe);const count=(probe.warehouses||[]).length-(S.warehouses||[]).length;
+  if(count<=0)return 'انبار جدیدی وارد نشد؛ موارد موجود یا تکراری رد شدند.';
+  if(!commit(mut,'ورود اکسل','انبارها','ورود دسته‌ای','',count+' انبار'))return 'ورود انبارها انجام نشد.';
+  index(B);render();return '';
+ }
+ if(k==='workers'){
+  const mut=c=>{
+   c.workers=c.workers||[];
+   body.forEach(r=>{
+    const name=String(r[1]||'').trim(),id=String(r[0]||'').trim();
+    if(!name||(c.workers||[]).some(w=>(id&&String(w.id)===id)||w.name===name))return;
+    c.workers.push({id:id||mkid(c,'worker'),name,monthlyGross:Math.round(num(r[2])),requiredHours:num(r[3]),active:!['خیر','غیرفعال','0','false'].includes(String(r[4]||'بله').trim().toLowerCase())});
+   });
+  };
+  const probe=clone(S);mut(probe);const count=(probe.workers||[]).length-(S.workers||[]).length;
+  if(count<=0)return 'کارگر جدیدی وارد نشد؛ موارد موجود یا تکراری رد شدند.';
+  if(!commit(mut,'ورود اکسل','کارگران تولید','ورود دسته‌ای','',count+' کارگر'))return 'ورود کارگران انجام نشد.';
+  render();return '';
+ }
+ if(k==='chequeEntries'){
+  const validation=[];
+  const mut=c=>{
+   body.forEach((r,i)=>{
+    const line=i+2,type=String(r[1]||'').trim(),date=normDate(r[0]),person=byName(c.parties,r[2]),sayad=en(r[3]||'').replace(/\D/g,''),due=normDate(r[5]),amount=Math.round(num(r[6]));
+    const error=m=>validation.push('ردیف '+fa(line)+': '+m);
+    if(!['دریافت چک','پرداخت چک'].includes(type))return error('نوع عملیات باید دریافت چک یا پرداخت چک باشد');
+    if(c.fyClosed||!date||String(date).slice(0,4)!==String(c.fy))return error('تاریخ در سال مالی فعال معتبر نیست');
+    if(c.days[date]?.closed)return error('روز انتخاب‌شده بسته است');
+    if(!person)return error('شخص در فهرست اشخاص پیدا نشد');
+    if(!/^\d{16}$/.test(sayad))return error('شناسه صیادی باید دقیقاً ۱۶ رقم باشد');
+    if(!due||!(amount>0))return error('سررسید یا مبلغ چک نامعتبر است');
+    if(c.ops.some(o=>o.status!=='deleted'&&en(o.sayad||'')===sayad))return error('شناسه صیادی تکراری است');
+    let src='';
+    if(type==='پرداخت چک'){const source=byName(c.sources,r[7]);if(!source)return error('منبع پرداخت چک در فهرست صندوق و بانک یافت نشد');src=source.id}
+    const id=mkid(c,'o'),no=++c.docSeq;
+    c.ops.push({id,seq:c.seq,no,date,type,status:'active',user:UI.user?.name||'سامانه',ts:nowIso(),desc:String(r[8]||''),party:person.id,sayad,bank:String(r[4]||''),due,amt:amount,src});
+   });
+  };
+  const probe=clone(S);mut(probe);
+  if(validation.length)return validation.slice(0,5).join(' | ');
+  const count=probe.ops.length-S.ops.length;
+  if(count<=0)return 'چک جدیدی برای ورود پیدا نشد.';
+  const checked=build(probe);if(checked.errs.length)return 'ورود چک متوقف شد: '+checked.errs[0].msg;
+  if(!commit(mut,'ورود اکسل','چک‌ها','ورود دسته‌ای','',count+' چک'))return 'ورود چک‌ها انجام نشد.';
+  index(B);render();return '';
+ }
+ if(k==='warehouseOps'){
+  const groups=new Map(),validation=[];
+  body.forEach((r,i)=>{
+   const line=i+2,groupKey=String(r[0]||('ROW-'+line)).trim(),date=normDate(r[1]),type=String(r[2]||'').trim(),code=String(r[3]||'').trim(),name=String(r[4]||'').trim(),q=num(r[5]),price=Math.round(num(r[6])),warehouseName=String(r[7]||'').trim(),toName=String(r[8]||'').trim(),acc=en(r[9]||'').replace(/\D/g,''),desc=String(r[10]||'');
+   const error=m=>validation.push('ردیف '+fa(line)+': '+m);
+   if(!['رسید کالا','حواله خروج کالا','انتقال بین انبارها'].includes(type))return error('نوع عملیات انبار نامعتبر است');
+   if(!date||String(date).slice(0,4)!==String(S.fy)||isClosed(date))return error('تاریخ نامعتبر است یا روز بسته شده است');
+   const good=S.goods.find(g=>(code&&String(g.code)===code)||(name&&g.name===name));if(!good)return error('کالا با کد یا نام واردشده پیدا نشد');
+   if(!(q>0))return error('تعداد باید بزرگ‌تر از صفر باشد');
+   const from=warehouseList().find(w=>w.name===warehouseName||String(w.id)===warehouseName),to=warehouseList().find(w=>w.name===toName||String(w.id)===toName);
+   if(!from)return error('انبار مبدأ یا انبار رسید پیدا نشد');
+   if(type==='رسید کالا'&&!(price>0))return error('برای رسید کالا بهای واحد مثبت لازم است');
+   if(type==='انتقال بین انبارها'&&(!to||to.id===from.id))return error('انبار مقصد معتبر و متفاوت از مبدأ انتخاب کنید');
+   if(type==='حواله خروج کالا'&&(!acc||!S.accounts.some(a=>String(a.code)===acc)||!['5','6'].some(x=>acc.startsWith(x))))return error('حساب هزینه یا مصرف معتبر نیست');
+   const key=type+'|'+date+'|'+groupKey,entry=groups.get(key)||{type,date,desc,fromWh:from.id,toWh:to?.id||'',acc,items:[]};
+   if(entry.fromWh!==from.id||entry.toWh!==(to?.id||''))return error('انبارهای یک سند گروهی باید یکسان باشند');
+   entry.items.push(type==='رسید کالا'?{g:good.id,q,p:price,w:from.id,unit:good.unit}:{g:good.id,q,w:from.id,unit:good.unit});
+   groups.set(key,entry);
+  });
+  if(validation.length)return validation.slice(0,5).join(' | ');
+  if(!groups.size)return 'ردیف معتبر برای ورود گردش انبار پیدا نشد.';
+  const mut=c=>{
+   groups.forEach(g=>{
+    const id=mkid(c,'o'),no=++c.docSeq,op={id,seq:c.seq,no,date:g.date,type:g.type,status:'active',user:UI.user?.name||'سامانه',ts:nowIso(),desc:g.desc,items:clone(g.items)};
+    if(g.type==='انتقال بین انبارها'){op.fromWh=g.fromWh;op.toWh=g.toWh}
+    if(g.type==='حواله خروج کالا')op.acc=g.acc;
+    c.ops.push(op);
+   });
+  };
+  const probe=clone(S);mut(probe);const checked=build(probe);
+  if(checked.errs.length)return 'ورود گردش انبار متوقف شد: '+checked.errs[0].msg;
+  const count=groups.size;
+  if(!commit(mut,'ورود اکسل','گردش انبار','ورود گروهی','',count+' سند'))return 'ورود گردش انبار انجام نشد.';
+  index(B);render();return '';
+ }
+ if(k==='boms')return importBomRows(body);
+ if(k==='productionOrders')return importProductionOrderRows(body);
 
  const mut=c=>{const nid_=p=>mkid(c,p);
   body.forEach((r,i)=>{const row=i+2;const E=m=>errs.push('ردیف '+fa(row)+': '+m);
