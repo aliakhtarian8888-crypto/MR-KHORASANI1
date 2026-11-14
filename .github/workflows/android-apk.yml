@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: android-apk-\${{ github.ref }}
+  group: android-apk-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
