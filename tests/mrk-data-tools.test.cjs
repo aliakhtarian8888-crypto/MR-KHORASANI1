@@ -198,3 +198,20 @@ test('scoped inventory restore includes opening stock, current and archived stoc
   assert.ok(ids.includes('1405/01/01'));
   assert.ok(!ids.includes('cash'));
 });
+
+test('builds a searchable cheque register for receivables and payables with source and dates', () => {
+  const { buildChequeRegisterRows } = require('../mrk-data-tools.js');
+  const rows=buildChequeRegisterRows([
+    {id:'c1',dir:'in',party:'p1',no:'1111222233334444',bank:'ملی',date:'1405/01/01',due:'1405/02/01',amt:100,status:'در جریان'},
+    {id:'c2',dir:'out',party:'p2',no:'5555666677778888',bank:'ملت',src:'s1',date:'1405/01/02',due:'1405/01/20',amt:200,status:'پاس‌شده',sdate:'1405/01/21'}
+  ],[
+    {id:'p1',name:'شرکت آلفا',code:'C-01'},
+    {id:'p2',name:'شرکت بتا',code:'C-02'}
+  ],[{id:'s1',name:'بانک تجارت'}],{query:'C-02',direction:'out'});
+  assert.equal(rows.length,1);
+  assert.equal(rows[0].partyName,'شرکت بتا');
+  assert.equal(rows[0].sourceName,'بانک تجارت');
+  assert.equal(rows[0].sayad,'5555666677778888');
+  assert.equal(rows[0].settlementDate,'1405/01/21');
+  assert.equal(rows[0].amount,200);
+});
