@@ -983,10 +983,18 @@ async function readTable(file){const n=(file.name||'').toLowerCase();if(/\.(csv|
 function runImport(k,rows){
  const t=templateSpec(k);if(!t)return 'نوع اطلاعات انتخاب‌شده معتبر نیست';
  const aliases=templateAliases(k,t);
- const mapped=window.MRKDataTools?MRKDataTools.mapImportRows(rows,t.h,aliases):{rows:rows,mode:'positional',matched:0,mapping:[]};
+ let mapped=null,legacyGoods=false;
+ if(k==='goods'&&window.MRKDataTools){
+  const legacy=MRKDataTools.mapImportRows(rows,TPL.goods.h);
+  if(legacy.mode==='header-mapped'){
+   legacyGoods=true;
+   mapped={...legacy,rows:legacy.rows.map(r=>{const z=[r[0],r[1],r[2],'کالای بازرگانی',r[3]];warehouseList().forEach((w,i)=>z.push(r[4+i*2]||0,r[5+i*2]||0));z.push(0);return z})};
+  }
+ }
+ if(!mapped)mapped=window.MRKDataTools?MRKDataTools.mapImportRows(rows,t.h,aliases):{rows:rows,mode:'positional',matched:0,mapping:[]};
  if(mapped.mode==='ambiguous-header')return 'عنوان ستون‌ها ناقص یا نامرتبط است؛ ورود متوقف شد تا اطلاعات در ستون اشتباه ثبت نشود.';
  let body=mapped.rows||[];
- if(k==='goods'&&mapped.mode==='positional'&&body.length&&body[0].length===8){
+ if(k==='goods'&&!legacyGoods&&mapped.mode==='positional'&&body.length&&body[0].length===8){
   body=body.map(r=>{const z=[r[0],r[1],r[2],'کالای بازرگانی',r[3]];warehouseList().forEach((w,i)=>z.push(r[4+i*2]||0,r[5+i*2]||0));z.push(0);return z});
  }
  body=body.filter(r=>r.some(x=>String(x==null?'':x).trim())&&!String(r[0]||'').trim().startsWith('نمونه'));
@@ -1075,7 +1083,7 @@ function runUnifiedImport(inputRows){
      if(o.roles)state.roles={...(state.roles||{}),...clone(o.roles)};
      if(o.taf)state.taf={...(state.taf||{}),...clone(o.taf)};
      if(o.lastInv)state.lastInv={...(state.lastInv||{}),...clone(o.lastInv)};
-     stats.added++;break;
+     stats.skipped++;break;
     case'party': add(state.parties,o,['code']);break;
     case'good': add(state.goods,o,['code']);break;
     case'source': add(state.sources,o,['code','name']);break;
@@ -1177,7 +1185,7 @@ ACT.dataPaste=()=>{
  m.innerHTML='<div class="mbox"><b>چسباندن داده از Excel</b><p>محتوای سلول‌ها را از Excel یا Google Sheets کپی و در کادر زیر جای‌گذاری کنید. عنوان‌ها و ترتیب ستون‌ها به‌صورت خودکار بررسی می‌شوند.</p><textarea id="dataPasteTa" rows="9" style="width:100%;font:inherit;border:1px solid #cbd3df;border-radius:10px;padding:8px" placeholder="سلول‌ها را اینجا بچسبانید"></textarea><div class="row mt"><button class="btn pri" id="dataPasteOk">تشخیص و ورود</button><button class="btn" id="dataPasteNo">انصراف</button></div></div>';
  document.body.appendChild(m);setTimeout(()=>m.querySelector('#dataPasteTa').focus(),50);
  m.querySelector('#dataPasteNo').onclick=()=>m.remove();
- m.querySelector('#dataPasteOk').onclick=()=>{const txt=m.querySelector('#dataPasteTa').value;if(!txt.trim())return toast('داده‌ای چسبانده نشده است');const data=parseTable(txt);const e=kind==='unified'?runUnifiedImport(data):runImport(kind,data);if(!e)m.remove()};
+ m.querySelector('#dataPasteOk').onclick=()=>{const txt=m.querySelector('#dataPasteTa').value;if(!txt.trim())return toast('داده‌ای چسبانده نشده است');const data=parseTable(txt);const e=kind==='unified'?runUnifiedImport(data):runImport(kind,data);if(!e)m.remove();else toast(e)};
 };
 document.addEventListener('change',e=>{if(e.target?.id==='dataImportKind')UI.dataImportKind=e.target.value});
 ACT.tplCopy=async k=>{const t=templateSpec(k);const ok=await copyText([t.h,t.s].map(r=>r.join('\t')).join('\n'));toast(ok?'قالب کپی شد. هنگام ورود، ستون‌ها با عنوانشان شناسایی می‌شوند.':'کپی خودکار ممکن نشد؛ ستون‌ها: '+t.h.join(' | '))};
