@@ -24,7 +24,7 @@ test('the complete inline accounting application script parses as valid JavaScri
   assert.notEqual(end, -1, 'main application script must close');
   const source = html.slice(codeStart, end);
   assert.doesNotThrow(() => new vm.Script(source, { filename: 'index-inline-app.js' }));
-  assert.match(source, /localExportStore\\.save\\(finalName,blob\\)/);
+  assert.match(source, /localExportStore\.save\(finalName,blob\)/);
   assert.match(source, /showExportReceipt\(record,downloadRequested\)/);
   assert.match(source, /ACT\.savedExports=/);
 });
