@@ -1049,7 +1049,7 @@ function runUnifiedImport(inputRows){
   const type=String(r[0]||'').trim(),raw=String(r[8]||'').trim();
   if(!type&&!raw)return;
   if(!raw){bad.push('ردیف '+fa(i+2)+': JSON کامل رکورد خالی است');return}
-  try{entries.push({type,obj:JSON.parse(raw),row:i+2})}catch(e){bad.push('ردیف '+fa(i+2)+': JSON رکورد معتبر نیست')}
+  try{entries.push({type,obj:JSON.parse(raw),row:i+2,raw:r})}catch(e){bad.push('ردیف '+fa(i+2)+': JSON رکورد معتبر نیست')}
  });
  if(bad.length)return bad.slice(0,5).join(' | ');
  if(!entries.length)return 'هیچ رکورد قابل ورودی یافت نشد.';
@@ -1087,8 +1087,7 @@ function runUnifiedImport(inputRows){
     case'productionOrder': add(state.productionOrders||(state.productionOrders=[]),o,['orderNo']);break;
     case'bom': add(state.boms||(state.boms=[]),o,['name']);break;
     case'day':{
-     const date=String(entry.obj.date||entry.row&&entries.find(x=>x===entry)?.obj.date||'');
-     const key=date||String(r[1]||'');
+     const key=String(entry.raw&&entry.raw[2]||entry.raw&&entry.raw[1]||'');
      if(key&&!state.days[key]){state.days[key]=clone(o);stats.added++}else stats.skipped++;
      break;
     }
@@ -1097,7 +1096,7 @@ function runUnifiedImport(inputRows){
      if(!state.audit.some(x=>x.id&&x.id===o.id)){state.audit.push(clone(o));stats.added++}else stats.skipped++;
      break;
     case'operation':{
-     if(!o.type||!TI[o.type]){stats.errors.push('ردیف '+fa(entry.row)+': نوع عملیات «'+String(o.type||'')+'» در این نسخه شناخته نشد');break}
+     if(!o.type||(!TI[o.type]&&o.type!=='اختتامیه')){stats.errors.push('ردیف '+fa(entry.row)+': نوع عملیات «'+String(o.type||'')+'» در این نسخه شناخته نشد');break}
      if(o.id&&state.ops.some(x=>x.id===o.id)){stats.skipped++;break}
      if(['فروش','خرید'].includes(o.type)&&state.ops.some(x=>x.status==='active'&&x.type===o.type&&Number(x.inv)===Number(o.inv))){stats.skipped++;stats.warnings.push('فاکتور '+o.type+' شماره '+fa(o.inv)+' به‌دلیل شماره تکراری وارد نشد');break}
      const date=normDate(o.date);if(!date){stats.errors.push('ردیف '+fa(entry.row)+': تاریخ عملیات معتبر نیست');break}
