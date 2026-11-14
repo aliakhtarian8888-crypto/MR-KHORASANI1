@@ -1106,8 +1106,8 @@ function runUnifiedImport(inputRows){
      if(o.code&&!state.accounts.some(a=>String(a.code)===String(o.code))){state.accounts.push(clone(o));stats.added++;if(o.taf)state.taf[o.code]=o.taf}else stats.skipped++;
      break;
     case'worker': add(state.workers||(state.workers=[]),o,['code','name']);break;
-    case'productionOrder': add(state.productionOrders||(state.productionOrders=[]),o,['orderNo']);break;
-    case'bom': add(state.boms||(state.boms=[]),o,['name']);break;
+    case'productionOrder': add(state.productionOrders||(state.productionOrders=[]),o,['orderNo']);state.productionSeq=Math.max(Number(state.productionSeq)||0,Number(String(o.orderNo||'').replace(/\\D/g,''))||0);break;
+    case'bom': add(state.boms||(state.boms=[]),o,['productId']);break;
     case'day':{
      const key=String(entry.raw&&entry.raw[2]||entry.raw&&entry.raw[1]||'');
      if(key&&!state.days[key]){state.days[key]=clone(o);stats.added++}else stats.skipped++;
@@ -1208,7 +1208,50 @@ ACT.dataPaste=()=>{
 document.addEventListener('change',e=>{if(e.target?.id==='dataImportKind')UI.dataImportKind=e.target.value});
 ACT.tplCopy=async k=>{const t=templateSpec(k);const ok=await copyText([t.h,t.s].map(r=>r.join('\t')).join('\n'));toast(ok?'قالب کپی شد. هنگام ورود، ستون‌ها با عنوانشان شناسایی می‌شوند.':'کپی خودکار ممکن نشد؛ ستون‌ها: '+t.h.join(' | '))};
 ACT.pasteImp=k=>{const t=templateSpec(k);const m=document.createElement('div');m.className='modal';m.innerHTML='<div class="mbox"><b>چسباندن داده از اکسل – '+esc(t.n)+'</b><p>عنوان ستون‌ها قابل جابه‌جایی است؛ برنامه سطر عنوان را پیدا و ستون‌ها را مرتب می‌کند.</p><textarea id="pasteTa" rows="8" style="width:100%;font:inherit;border:1px solid #cbd3df;border-radius:10px;padding:8px" placeholder="سلول‌های کپی‌شده از Excel یا Google Sheets را اینجا بچسبانید"></textarea><div class="row mt"><button class="btn pri" id="pOk">تشخیص ستون‌ها و ورود</button><button class="btn" id="pNo">انصراف</button></div></div>';document.body.appendChild(m);setTimeout(()=>m.querySelector('#pasteTa').focus(),50);m.querySelector('#pNo').onclick=()=>m.remove();m.querySelector('#pOk').onclick=()=>{const txt=m.querySelector('#pasteTa').value;if(!txt.trim())return toast('چیزی چسبانده نشده است');const e=runImport(k,parseTable(txt));if(!e)m.remove()}};
-function importRows(k,body){const byName=(arr,n)=>arr.find(x=>x.name===String(n).trim());let errs=[];
+function importBomRows(body){
+ const errors=[],groups=new Map();
+ body.forEach((r,i)=>{
+  const row=i+2,code=String(r[0]||'').trim(),name=String(r[1]||'').trim(),batchQty=num(r[2]),materialCode=String(r[5]||'').trim(),materialName=String(r[6]||'').trim(),qty=num(r[7]),unit=String(r[8]||'').trim();
+  const product=S.goods.find(g=>(code&&String(g.code)===code)||(name&&g.name===name));
+  const material=S.goods.find(g=>(materialCode&&String(g.code)===materialCode)||(materialName&&g.name===materialName));
+  if(!product){errors.push('ردیف '+fa(row)+': محصول با کد/نام واردشده پیدا نشد');return}
+  if(!material){errors.push('ردیف '+fa(row)+': ماده اولیه با کد/نام واردشده پیدا نشد');return}
+  if(!(batchQty>0&&qty>0)){errors.push('ردیف '+fa(row)+': مقدار خروجی بچ و مصرف ماده باید مثبت باشد');return}
+  const key=product.id,group=groups.get(key)||{productId:key,batchQty,desc:String(r[4]||''),id:String(r[9]||'').trim(),materials:[]};
+  if(Math.abs(group.batchQty-batchQty)>0.0000001){errors.push('ردیف '+fa(row)+': مقدار خروجی بچ برای یک محصول یکسان نیست');return}
+  if(group.materials.some(x=>x.g===material.id)){errors.push('ردیف '+fa(row)+': ماده اولیه تکراری است؛ برای هر ماده فقط یک ردیف ثبت کنید');return}
+  group.materials.push({g:material.id,q:qty,unit:unit||material.unit||'عدد'});groups.set(key,group);
+ });
+ if(errors.length)return errors.slice(0,5).join(' | ');
+ if(!groups.size)return 'ردیف معتبر برای ورود فرمول ساخت پیدا نشد.';
+ const mut=c=>{
+  groups.forEach(g=>{
+   const old=c.boms.find(x=>x.productId===g.productId);
+   const rec={id:old?.id||g.id||mkid(c,'bom'),productId:g.productId,batchQty:g.batchQty,desc:g.desc,materials:clone(g.materials),updatedAt:Date.now()};
+   if(old)Object.assign(old,rec);else c.boms.push(rec);
+  });
+ };
+ const probe=clone(S);mut(probe);
+ if(!commit(mut,'ورود اکسل','فرمول ساخت','BOM','',groups.size+' فرمول'))return 'ورود فرمول‌ها انجام نشد؛ کنترل ثبت اطلاعات اجازه نداد.';
+ index(B);render();toast('ورود '+fa(groups.size)+' فرمول ساخت و '+fa([...groups.values()].reduce((n,g)=>n+g.materials.length,0))+' ردیف ماده اولیه انجام شد.');return '';
+}
+function importProductionOrderRows(body){
+ const records=[DATA_EXCEL_HEADERS],errors=[];
+ body.forEach((r,i)=>{
+  const row=i+2,raw=String(r[11]||'').trim(),opsRaw=String(r[12]||'').trim();
+  if(!raw){errors.push('ردیف '+fa(row)+': ستون اطلاعات کامل دستور (JSON) خالی است؛ برای بازگردانی دقیق از خروجی دستورهای ساخت استفاده کنید');return}
+  try{
+   const order=JSON.parse(raw),ops=opsRaw?JSON.parse(opsRaw):[];
+   if(!order||!order.id||!order.orderNo||!order.productId||!Array.isArray(order.materials)||!Array.isArray(ops))throw new Error('ساختار ناقص');
+   addDataExcelRow(records,'productionOrder',order,{id:order.id,date:order.date,code:order.orderNo,name:r[4]||'',status:order.status,amount:order.quantity});
+   ops.forEach(op=>addDataExcelRow(records,'operation',op,{id:op.id,date:op.date,opType:op.type,code:op.no,name:op.desc,status:op.status,amount:opAmt(op)}));
+  }catch(e){errors.push('ردیف '+fa(row)+': JSON دستور یا عملیات مرتبط معتبر نیست')}
+ });
+ if(errors.length)return errors.slice(0,5).join(' | ');
+ if(records.length===1)return 'هیچ دستور ساختی برای ورود وجود ندارد.';
+ return runUnifiedImport(records);
+}
+function importRows(k,body){if(k==='boms')return importBomRows(body);if(k==='productionOrders')return importProductionOrderRows(body);const byName=(arr,n)=>arr.find(x=>x.name===String(n).trim());let errs=[];
  const mut=c=>{const nid_=p=>mkid(c,p);
   body.forEach((r,i)=>{const row=i+2;const E=m=>errs.push('ردیف '+fa(row)+': '+m);
    const party=n=>{const p=byName(c.parties,n);if(!p)E('شخص «'+n+'» یافت نشد');return p},src=n=>{const s=byName(c.sources,n);if(!s)E('منبع «'+n+'» یافت نشد');return s};
