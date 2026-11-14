@@ -52,5 +52,5 @@ test('all inventory, cheque and production import/export tools are exposed in th
   assert.match(source, /cardexGoodsSearch/);
   assert.match(source, /cardexPartySearch/);
   assert.match(source, /if\(k==='chequeEntries'\)/);
-  assert.match(source, /if\(k==='warehouseOps'\)/);
+  assert.match(source, /if\(k==='warehouseOpsInput'\)/);
 });
