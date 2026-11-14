@@ -188,6 +188,41 @@
     return { opening, movements:visible, closing:snapshot() };
   }
 
+
+  function buildChequeRegisterRows(cheques, parties, sources, filters) {
+    const f = filters || {};
+    const partyById = new Map((parties || []).map(x => [String(x.id), x]));
+    const sourceById = new Map((sources || []).map(x => [String(x.id), x]));
+    const query = normalizeHeader(f.query || '');
+    const direction = String(f.direction || '');
+    return (Array.isArray(cheques) ? cheques : [])
+      .map(c => {
+        const party = partyById.get(String(c.party)) || {};
+        const source = sourceById.get(String(c.src)) || {};
+        return {
+          id: String(c.id || ''),
+          direction: c.dir === 'out' ? 'پرداختنی' : 'دریافتنی',
+          directionCode: c.dir === 'out' ? 'out' : 'in',
+          partyId: String(c.party || ''),
+          partyName: String(party.name || ''),
+          partyCode: String(party.code || ''),
+          sayad: String(c.no || ''),
+          bank: String(c.bank || ''),
+          sourceName: String(source.name || ''),
+          chequeDate: String(c.date || ''),
+          dueDate: String(c.due || ''),
+          settlementDate: String(c.sdate || ''),
+          amount: Number(c.amt) || 0,
+          status: String(c.status || '')
+        };
+      })
+      .filter(c => !direction || c.directionCode === direction)
+      .filter(c => !query || normalizeHeader([
+        c.partyName,c.partyCode,c.sayad,c.bank,c.sourceName,c.status
+      ].join(' ')).includes(query))
+      .sort((a,b) => a.dueDate.localeCompare(b.dueDate) || a.sayad.localeCompare(b.sayad));
+  }
+
   function selectScopeRows(rows, scope) {
     if (!Array.isArray(rows) || !rows.length) return [];
     const header = rows[0];
@@ -226,5 +261,5 @@
     return [header, ...records];
   }
 
-  return { latinDigits, normalizeHeader, mapImportRows, buildCardex, buildCardexLedger, classifyOperation, uniqueByRecordId, selectScopeRows };
+  return { latinDigits, normalizeHeader, mapImportRows, buildCardex, buildCardexLedger, classifyOperation, uniqueByRecordId, selectScopeRows, buildChequeRegisterRows };
 });
