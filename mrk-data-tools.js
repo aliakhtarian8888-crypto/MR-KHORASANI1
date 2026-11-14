@@ -194,11 +194,19 @@
     const records = rows.slice(1).filter(row => {
       const recordType = String(row && row[0] || '');
       const operationType = String(row && row[3] || '');
+      const opScope = recordType === 'operation' ? classifyOperation(operationType) : '';
+      const dependencies = ['meta','party','good','source','warehouse','account'];
       if (scope === 'all' || scope === 'operations') return true;
-      if (scope === 'cheques') return recordType === 'carryCheque' || (recordType === 'operation' && classifyOperation(operationType) === 'cheques');
-      if (scope === 'receipts' || scope === 'issues' || scope === 'transfers') return recordType === 'operation' && classifyOperation(operationType) === scope;
-      if (scope === 'warehouseOps') return recordType === 'operation' && ['receipts','issues','transfers'].includes(classifyOperation(operationType));
-      if (scope === 'cardex') return recordType === 'operation' && ['receipts','issues','transfers'].includes(classifyOperation(operationType));
+      if (['cheques','receipts','issues','transfers','warehouseOps','inventory'].includes(scope) && dependencies.includes(recordType)) return true;
+      if (scope === 'inventory') return recordType === 'openingStock' || (recordType === 'operation' && ['receipts','issues','transfers'].includes(opScope));
+      if (scope === 'cheques') return recordType === 'carryCheque' || (recordType === 'operation' && opScope === 'cheques');
+      if (scope === 'receipts' || scope === 'issues' || scope === 'transfers') return recordType === 'operation' && opScope === scope;
+      if (scope === 'warehouseOps') return recordType === 'operation' && ['receipts','issues','transfers'].includes(opScope);
+      if (scope === 'cardex') return recordType === 'operation' && ['receipts','issues','transfers'].includes(opScope);
+
+
+
+
       if (scope === 'warehouses') return recordType === 'warehouse';
       if (scope === 'workers') return recordType === 'worker';
       if (scope === 'boms') return recordType === 'bom';
