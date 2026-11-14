@@ -18,7 +18,7 @@ import androidx.webkit.WebViewAssetLoader;
 import androidx.webkit.WebViewClientCompat;
 
 import java.io.OutputStream;
-import java.util.Base64;
+import android.util.Base64;
 
 public final class MainActivity extends Activity {
     private static final int REQUEST_CREATE_DOCUMENT = 4101;
@@ -116,7 +116,7 @@ public final class MainActivity extends Activity {
         @JavascriptInterface
         public void saveFile(String fileName, String mimeType, String base64Data) {
             try {
-                pendingExportBytes = Base64.getDecoder().decode(base64Data);
+                pendingExportBytes = Base64.decode(base64Data, Base64.DEFAULT);
                 runOnUiThread(() -> {
                     Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
                     intent.addCategory(Intent.CATEGORY_OPENABLE);
