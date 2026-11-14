@@ -162,7 +162,7 @@
       unit:(goodsById.get(b.goodsId)||{}).unit || '',
       warehouseName:(warehousesById.get(b.warehouseId)||{}).name || '',
       quantity:b.quantity, value:b.value
-    })).sort((a,b)=>a.goodsCode.localeCompare(b.goodsCode)||a.goodsName.localeCompare(b.goodsName)||a.warehouseName.localeCompare(b.warehouseName));
+    })).sort((a,b)=>(a.code||'').localeCompare(b.code||'')||a.goodsName.localeCompare(b.goodsName)||a.warehouseName.localeCompare(b.warehouseName));
     const opening = snapshot();
     const visible = [];
     sorted.filter(x => String(x.date||'') >= from && String(x.date||'') <= to).forEach(x => {
