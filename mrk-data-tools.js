@@ -199,7 +199,7 @@
       const dependencies = ['meta','party','good','source','warehouse','account'];
       if (scope === 'all' || scope === 'operations') return true;
       if (['cheques','receipts','issues','transfers','warehouseOps','inventory'].includes(scope)) {
-        if (dependencies.includes(recordType) || recordType === 'archivedDay') return true;
+        if (dependencies.includes(recordType) || recordType === 'archivedDay' || recordType === 'day' || (recordType === 'openingStock' && scope !== 'cheques')) return true;
       }
       if (scope === 'inventory' || scope === 'warehouseOps') {
         if (recordType === 'openingStock') return true;
