@@ -89,3 +89,20 @@ test('maps production order fields including full JSON payload when columns are 
   assert.equal(result.mode, 'header-mapped');
   assert.deepEqual(result.rows[0], ['', 'PR-01', '۱۴۰۵/۰۱/۰۲', 'FG-01', 25, '{"id":"o1"}', '[]']);
 });
+
+test('classifies operational records for cheque, stock receipt, issue and transfer exports', () => {
+  const { classifyOperation } = require('../mrk-data-tools.js');
+  assert.equal(classifyOperation({type:'دریافت چک'}), 'cheques');
+  assert.equal(classifyOperation({type:'وصول چک'}), 'cheques');
+  assert.equal(classifyOperation({type:'رسید کالا'}), 'receipts');
+  assert.equal(classifyOperation({type:'حواله خروج کالا'}), 'issues');
+  assert.equal(classifyOperation({type:'انتقال بین انبارها'}), 'transfers');
+  assert.equal(classifyOperation({type:'فروش'}), 'stock');
+});
+
+test('deduplicates repeated source operations in cardex exports while preserving distinct ids', () => {
+  const { uniqueByRecordId } = require('../mrk-data-tools.js');
+  const a = {id:'op-1',type:'رسید کالا'};
+  const b = {id:'op-2',type:'انتقال بین انبارها'};
+  assert.deepEqual(uniqueByRecordId([a,a,b,{...a}]), [a,b]);
+});
