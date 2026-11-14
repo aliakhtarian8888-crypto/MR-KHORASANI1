@@ -846,7 +846,7 @@ function warehousePage(){return `<div class="card"><div class="ftitle">تعری�
 ACT.editWarehouse=id=>{if(!can('wh'))return toast('دسترسی انبارداری ندارید');const w=warehouseList().find(x=>x.id===String(id));if(!w)return;const n=prompt('نام جدید انبار',w.name);if(n===null)return;if(!n.trim())return toast('نام انبار الزامی است');if(commit(c=>{const x=c.warehouses.find(z=>String(z.id)===String(id));x.name=n.trim();const a=c.accounts.find(a=>a.code===x.acc);if(a)a.name='موجودی کالا – '+x.name},'ویرایش','انبار',id,w.name,n.trim())){index(B);render();toast('نام انبار اصلاح شد')}};
 ACT.saveWarehouse=()=>{if(!can('wh'))return toast('دسترسی انبارداری ندارید');const name=($('#wh_name')?.value||'').trim();if(!name)return toast('نام انبار را وارد کنید');if(warehouseList().some(w=>w.name.trim()===name))return toast('این نام انبار تکراری است');if(commit(c=>{const used=warehouseList(c).map(w=>+w.acc||0);let code=Math.max(1602,...used)+1;while(c.accounts.some(a=>a.code===String(code)))code++;const id=mkid(c,'w');c.warehouses=c.warehouses||[];c.warehouses.push({id,name,acc:String(code)});c.accounts.push({code:String(code),name:'موجودی کالا – '+name})},'ایجاد','انبار',name,'','انبار جدید')){index(B);render();toast('انبار و حساب معین موجودی آن ایجاد شد')}};
 function basePage(){const t=UI.base;let h=chips([['parties','👥 اشخاص'],['goods','👕 کالاها'],['warehouses','🏬 تعریف انبارها'],['stock','📊 موجودی انبارها'],['sources','🏦 منابع مالی'],['coa','📚 کدینگ حساب‌ها']].filter(([k])=>k!=='warehouses'||can('wh')),t,'bt');
- const tplBar=k=>`<div class="card"><div class="row"><button class="btn" data-a="tpl" data-p="${k}">📄 دریافت قالب اکسل</button><button class="btn" data-a="tplCopy" data-p="${k}">📋 کپی قالب</button><button class="btn" data-a="pasteImp" data-p="${k}">📥 چسباندن از اکسل</button><label class="btn filebtn">📂 ورود از اکسل (از حافظهٔ گوشی)<input type="file" data-imp="${k}" accept=".xlsx,.xls,.csv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/octet-stream,*/*"></label></div><div class="hint">اگر دکمهٔ دریافت قالب یا ورود فایل در محیط شما (نمایش داخل چت یا برخی APKها) پاسخ نمی‌دهد: «کپی قالب» را بزنید و در اکسل بچسبانید؛ سپس ستون‌های پر شده را کپی کنید و «چسباندن از اکسل» را بزنید.${window.self!==window.top?'<br><b>این صفحه داخل قاب است؛ دانلود و انتخاب فایل در قاب‌ها معمولاً مسدود است. فایل را در Chrome باز کنید.</b>':''}</div></div>`;
+ const tplBar=k=>`<div class="card"><div class="row"><button class="btn" data-a="exportBaseData" data-p="${k}">⬇️ دانلود اطلاعات موجود</button><button class="btn" data-a="tpl" data-p="${k}">📄 دریافت قالب ورود</button><button class="btn" data-a="tplCopy" data-p="${k}">📋 کپی قالب</button><button class="btn" data-a="pasteImp" data-p="${k}">📥 چسباندن از اکسل</button><label class="btn filebtn">📂 ورود از اکسل (از حافظهٔ گوشی)<input type="file" data-imp="${k}" accept=".xlsx,.xls,.csv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/octet-stream,*/*"></label></div><div class="hint">اگر دکمهٔ دریافت قالب یا ورود فایل در محیط شما (نمایش داخل چت یا برخی APKها) پاسخ نمی‌دهد: «کپی قالب» را بزنید و در اکسل بچسبانید؛ سپس ستون‌های پر شده را کپی کنید و «چسباندن از اکسل» را بزنید.${window.self!==window.top?'<br><b>این صفحه داخل قاب است؛ دانلود و انتخاب فایل در قاب‌ها معمولاً مسدود است. فایل را در Chrome باز کنید.</b>':''}</div></div>`;
  if(t==='parties'){const q=UI.q||'';h+=tplBar('parties')+`<div class="card"><input placeholder="جستجوی نام یا کد" data-a="" id="qBox" value="${esc(q)}" oninput="UI.q=this.value;partyList()"><div id="plist">${partyListHtml()}</div></div>`+partyForm()}
  else if(t==='goods')h+=tplBar('goods')+`<div class="card" id="glist">${goodListHtml()}</div>`+goodForm();
  else if(t==='warehouses')h+=can('wh')?warehousePage():'<div class="card warn">دسترسی مدیریت انبار ندارید.</div>';
@@ -939,20 +939,82 @@ const TPL={
  rp:{n:'دریافت و پرداخت',h:['تاریخ (۱۴۰۵/۰۱/۰۱)','نوع (دریافت/پرداخت)','نام شخص','نام منبع مالی','مبلغ','شرح'],s:['نمونه','دریافت','شرکت نمونه','صندوق مرکزی',1000000,'بابت تسویه']},
  exp:{n:'هزینه‌ها',h:['تاریخ (۱۴۰۵/۰۱/۰۱)','کد حساب هزینه','نام منبع مالی (خالی = نسیه)','نام شخص (برای نسیه)','مبلغ','شرح'],s:['نمونه','6201','صندوق مرکزی','',2000000,'اجارهٔ ماه']},
  inv:{n:'فاکتورها',h:['تاریخ (۱۴۰۵/۰۱/۰۱)','نوع (فروش/خرید)','نام شخص','انبار (۱ یا ۲)','نام کالا','تعداد','قیمت واحد','تخفیف (ریال)','هزینه حمل','نام منبع پرداخت','مبلغ پرداختی','شرح'],s:['نمونه','فروش','شرکت نمونه',1,'پیراهن مردانه',2,900000,0,0,'صندوق مرکزی',500000,'']}};
-ACT.tpl=k=>{const t=TPL[k];saveBlob(fname('قالب اکسل '+t.n,'xlsx'),xlsxBlob([t.h,t.s],t.n));toast('قالب در پوشهٔ دانلود ذخیره شد؛ ردیف «نمونه» هنگام ورود نادیده گرفته می‌شود')};
+function templateSpec(k){
+ if(k!=='goods')return TPL[k];
+ const whs=warehouseList(),h=['کد','نام کالا','واحد','نوع کالا','قیمت فروش'];
+ whs.forEach(w=>h.push('تعداد اول دوره - '+w.name,'بهای واحد اول دوره - '+w.name));
+ h.push('حداقل موجودی');
+ const s=['نمونه','کالای نمونه','عدد','کالای بازرگانی',0];
+ whs.forEach(()=>s.push(0,0));s.push(0);
+ return {n:'کالاها و موجودی اول دوره تمام انبارها',h,s};
+}
+function templateAliases(k,spec){
+ const a={};
+ if(k==='goods'){
+  a['کد']=['کد کالا','شناسه کالا','کد محصول'];
+  a['نام کالا']=['نام','شرح کالا','عنوان کالا'];
+  a['واحد']=['واحد پایه','واحد اندازه گیری','واحد سنجش'];
+  a['نوع کالا']=['نوع','گروه کالا'];
+  a['قیمت فروش']=['قیمت فروش هر واحد','نرخ فروش','فی فروش'];
+  a['حداقل موجودی']=['حداقل تعداد','نقطه سفارش'];
+  warehouseList().forEach((w,i)=>{
+   a['تعداد اول دوره - '+w.name]=['موجودی اول دوره '+w.name,'تعداد اول دوره انبار '+w.name,...(String(w.id)==='1'?['تعداد اول دوره انبار شماره یک','تعداد اول دوره انبار ۱']:[]),...(String(w.id)==='2'?['تعداد اول دوره انبار شماره دو','تعداد اول دوره انبار ۲']:[])];
+   a['بهای واحد اول دوره - '+w.name]=['بهای اول دوره '+w.name,'بهای واحد انبار '+w.name,...(String(w.id)==='1'?['بهای واحد انبار شماره یک']:[]),...(String(w.id)==='2'?['بهای واحد انبار شماره دو']:[])];
+  });
+ }else{
+  const common={
+   'کد':['کد شخص','کد حساب','شناسه','کد کالا'],
+   'نام':['نام شخص','نام مشتری','نام تأمین‌کننده','نام منبع','عنوان'],
+   'نام کالا':['نام','شرح کالا','عنوان کالا'],
+   'نوع (مشتری/تأمین‌کننده/کارمند/شریک/سهامدار/بانک/حساب دولتی/سایر)':['نوع شخص','نوع'],
+   'تلفن':['شماره تماس','موبایل','همراه'],
+   'نشانی':['آدرس'],
+   'تاریخ (۱۴۰۵/۰۱/۰۱)':['تاریخ','تاریخ سند','تاریخ عملیات'],
+   'مبلغ':['مبلغ ریال','مبلغ (ریال)','جمع مبلغ'],
+   'شرح':['توضیحات','شرح عملیات','بابت']
+  };
+  spec.h.forEach(h=>{if(common[h])a[h]=common[h]});
+ }
+ return a;
+}
+ACT.tpl=k=>{const t=templateSpec(k);saveBlob(fname('قالب اکسل '+t.n,'xlsx'),xlsxBlob([t.h,t.s],t.n));toast('قالب استاندارد دانلود شد؛ عنوان ستون‌ها قابل جابه‌جایی است و هنگام ورود به‌صورت خودکار تشخیص داده می‌شود')};
 
 async function readTable(file){const n=(file.name||'').toLowerCase();if(/\.(csv|tsv|txt)$/.test(n))return parseTable(await file.text());return await readXlsx(await file.arrayBuffer())}
-function runImport(k,rows){const t=TPL[k];let body=rows.filter(r=>r.some(x=>String(x).trim()));if(body.length&&String(body[0][0]).trim()===t.h[0].trim())body=body.slice(1);body=body.filter(r=>!String(r[0]).trim().startsWith('نمونه'));if(!body.length)return 'ردیف داده‌ای یافت نشد';return importRows(k,body)}
-async function onFile(file){if(!file)return;try{const rows=await readTable(file);const e=runImport(UI.impKind,rows);if(e)toast(e)}catch(x){toast('خواندن فایل ناموفق بود ('+x.message+'). می‌توانید از «چسباندن از اکسل» استفاده کنید.')}}
-ACT.tplCopy=async k=>{const t=TPL[k];const ok=await copyText([t.h,t.s].map(r=>r.join('\t')).join('\n'));toast(ok?'✅ قالب کپی شد؛ در اکسل یا Google Sheets بچسبانید (ردیف «نمونه» هنگام ورود نادیده گرفته می‌شود)':'کپی خودکار ممکن نشد؛ ستون‌های لازم: '+t.h.join(' | '))};
-ACT.pasteImp=k=>{const t=TPL[k];const m=document.createElement('div');m.className='modal';m.innerHTML=`<div class="mbox"><b>چسباندن داده از اکسل – ${t.n}</b><p>ستون‌ها به ترتیب: ${esc(t.h.join(' | '))}</p><textarea id="pasteTa" rows="8" style="width:100%;font:inherit;border:1px solid #cbd3df;border-radius:10px;padding:8px" placeholder="سلول‌های اکسل را اینجا بچسبانید (سطر اول می‌تواند عنوان ستون‌ها باشد)"></textarea><div class="row mt"><button class="btn pri" id="pOk">ورود اطلاعات</button><button class="btn" id="pNo">انصراف</button></div></div>`;document.body.appendChild(m);setTimeout(()=>m.querySelector('#pasteTa').focus(),50);m.querySelector('#pNo').onclick=()=>m.remove();m.querySelector('#pOk').onclick=()=>{const txt=m.querySelector('#pasteTa').value;if(!txt.trim())return toast('چیزی چسبانده نشده است');const e=runImport(k,parseTable(txt));if(!e||e==='')m.remove();else toast(e)}};
+function runImport(k,rows){
+ const t=templateSpec(k);if(!t)return 'نوع اطلاعات انتخاب‌شده معتبر نیست';
+ const aliases=templateAliases(k,t);
+ const mapped=window.MRKDataTools?MRKDataTools.mapImportRows(rows,t.h,aliases):{rows:rows,mode:'positional',matched:0,mapping:[]};
+ let body=mapped.rows||[];
+ if(k==='goods'&&mapped.mode==='positional'&&body.length&&body[0].length===8){
+  body=body.map(r=>{const z=[r[0],r[1],r[2],'کالای بازرگانی',r[3]];warehouseList().forEach((w,i)=>z.push(r[4+i*2]||0,r[5+i*2]||0));z.push(0);return z});
+ }
+ body=body.filter(r=>r.some(x=>String(x==null?'':x).trim())&&!String(r[0]||'').trim().startsWith('نمونه'));
+ if(!body.length)return 'ردیف داده‌ای با اطلاعات قابل شناسایی یافت نشد';
+ const missing=(mapped.mapping||[]).filter(x=>!x.matched).map(x=>x.header);
+ const result=importRows(k,body);
+ if(result)return result;
+ toast((mapped.mode==='header-mapped'?'ستون‌ها به‌صورت خودکار تشخیص داده شدند؛ ':'')+'ورود '+fa(body.length)+' ردیف انجام شد.'+(missing.length?' ستون‌های بدون تطبیق: '+missing.slice(0,3).join('، '):''));
+ return '';
+}
+async function onFile(file){
+ if(!file)return;
+ try{
+  const rows=await readTable(file);
+  let e;
+  if(UI.impKind==='data')e=runUnifiedImport(rows);
+  else e=runImport(UI.impKind,rows);
+  if(e)toast(e);
+ }catch(x){toast('خواندن یا ورود فایل ناموفق بود ('+x.message+'). داده‌های فعلی تغییر نکردند.')}
+}
+ACT.tplCopy=async k=>{const t=templateSpec(k);const ok=await copyText([t.h,t.s].map(r=>r.join('\t')).join('\n'));toast(ok?'قالب کپی شد. هنگام ورود، ستون‌ها با عنوانشان شناسایی می‌شوند.':'کپی خودکار ممکن نشد؛ ستون‌ها: '+t.h.join(' | '))};
+ACT.pasteImp=k=>{const t=templateSpec(k);const m=document.createElement('div');m.className='modal';m.innerHTML='<div class="mbox"><b>چسباندن داده از اکسل – '+esc(t.n)+'</b><p>عنوان ستون‌ها قابل جابه‌جایی است؛ برنامه سطر عنوان را پیدا و ستون‌ها را مرتب می‌کند.</p><textarea id="pasteTa" rows="8" style="width:100%;font:inherit;border:1px solid #cbd3df;border-radius:10px;padding:8px" placeholder="سلول‌های کپی‌شده از Excel یا Google Sheets را اینجا بچسبانید"></textarea><div class="row mt"><button class="btn pri" id="pOk">تشخیص ستون‌ها و ورود</button><button class="btn" id="pNo">انصراف</button></div></div>';document.body.appendChild(m);setTimeout(()=>m.querySelector('#pasteTa').focus(),50);m.querySelector('#pNo').onclick=()=>m.remove();m.querySelector('#pOk').onclick=()=>{const txt=m.querySelector('#pasteTa').value;if(!txt.trim())return toast('چیزی چسبانده نشده است');const e=runImport(k,parseTable(txt));if(!e)m.remove()}};
 function importRows(k,body){const byName=(arr,n)=>arr.find(x=>x.name===String(n).trim());let errs=[];
  const mut=c=>{const nid_=p=>mkid(c,p);
   body.forEach((r,i)=>{const row=i+2;const E=m=>errs.push('ردیف '+fa(row)+': '+m);
    const party=n=>{const p=byName(c.parties,n);if(!p)E('شخص «'+n+'» یافت نشد');return p},src=n=>{const s=byName(c.sources,n);if(!s)E('منبع «'+n+'» یافت نشد');return s};
    const mkop=(type,date,x)=>{const d=normDate(date);if(!d){E('تاریخ نامعتبر');return}const o={id:mkid(c,'o'),seq:c.seq,no:++c.docSeq,date:d,type,status:'active',user:UI.user.name,ts:nowIso(),desc:x.desc||'',...x};delete o.desc2;if(type==='فروش'||type==='خرید')o.inv=nextInv(type,c);if(type.endsWith('خارج از فاکتور'))o.ref=nextRef(type,c);c.ops.push(o)};
    if(k==='parties'){const name=String(r[1]).trim();if(!name)return E('نام خالی');let p=byName(c.parties,name);if(!p){p={id:nid_('p')};c.parties.push(p)}Object.assign(p,{name,code:en(r[0]),kind:KINDS.includes(String(r[2]).trim())?String(r[2]).trim():'مشتری',phone:en(r[3]),addr:String(r[4]||''),open:Math.round(num(r[5])),side:String(r[6]).includes('بستانکار')?'bs':'bd'})}
-   else if(k==='goods'){const name=String(r[1]).trim();if(!name)return E('نام کالا خالی');let g=byName(c.goods,name);if(!g){g={id:nid_('g')};c.goods.push(g)}Object.assign(g,{name,code:en(r[0]),unit:String(r[2]||'عدد'),price:Math.round(num(r[3])),q1:num(r[4]),c1:Math.round(num(r[5])),q2:num(r[6]),c2:Math.round(num(r[7]))})}
+   else if(k==='goods'){const name=String(r[1]).trim();if(!name)return E('نام کالا خالی');let g=byName(c.goods,name);if(!g){g={id:nid_('g')};c.goods.push(g)}const kinds={'مواد اولیه':'material','کالای بازرگانی':'commercial','محصول ساخته‌شده':'finished','material':'material','commercial':'commercial','finished':'finished'};const opening={};let ix=5;warehouseList(c).forEach(w=>{const q=num(r[ix++]),cost=Math.round(num(r[ix++]));if(w.id==='1'){g.q1=q;g.c1=cost}else if(w.id==='2'){g.q2=q;g.c2=cost}else opening[w.id]={q,c:cost}});Object.assign(g,{name,code:en(r[0]),unit:String(r[2]||'عدد'),kind:kinds[String(r[3]||'کالای بازرگانی').trim()]||'commercial',price:Math.round(num(r[4])),opening,minQty:num(r[ix]||0)})}
    else if(k==='sources'){const name=String(r[0]).trim();const kind=KIN.includes(String(r[1]).trim())?String(r[1]).trim():'بانک';let s=byName(c.sources,name);if(!s){s={id:nid_('s')};c.sources.push(s)}Object.assign(s,{name,kind,acc:kind==='صندوق'?'1101':kind==='بانک'?'1201':'1301',open:Math.round(num(r[2]))})}
    else if(k==='coa'){const code=en(r[0]).replace(/\D/g,''),name=String(r[1]).trim();if(!(code.length===2||code.length===4)||!name)return E('کد یا نام نامعتبر');if(c.accounts.some(a=>a.code===code))return;c.accounts.push({code,name});const t=String(r[2]).trim();if(t==='شخص')c.taf[code]='party';if(t==='منبع')c.taf[code]='src'}
    else if(k==='rp'){const p=party(r[2]),s=src(r[3]);if(!p||!s)return;mkop(String(r[1]).trim()==='پرداخت'?'پرداخت خارج از فاکتور':'دریافت خارج از فاکتور',r[0],{party:p.id,src:s.id,amt:Math.round(num(r[4])),desc:String(r[5]||'')})}
