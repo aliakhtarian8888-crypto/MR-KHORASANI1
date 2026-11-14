@@ -1,0 +1,30 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.mrkhorasani.app'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'com.mrkhorasani.app'
+        minSdk 23
+        targetSdk 35
+        versionCode 283
+        versionName '2.8.3'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    sourceSets { main { assets.srcDirs = ['src/main/assets'] } }
+}
+dependencies {
+    implementation 'androidx.webkit:webkit:1.12.1'
+}
+tasks.register('syncWebAssets', Sync) {
+    from('../../') {
+        include '**/*'
+        exclude '.git/**', '.github/**', 'tests/**', 'android/**'
+        exclude 'README*', '*.txt'
+    }
+    into 'src/main/assets'
+}
+tasks.named('preBuild').configure { dependsOn tasks.named('syncWebAssets') }
