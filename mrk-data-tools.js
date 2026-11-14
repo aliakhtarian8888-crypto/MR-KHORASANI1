@@ -170,7 +170,7 @@
       const q = Number(x.q) || 0, v = Number(x.v) || 0;
       b.quantity += q;
       b.value += v;
-      const personText = normalizeHeader(x.partyName || '');
+      const personText = normalizeHeader([x.partyName, x.partyCode].filter(Boolean).join(' '));
       if (partyQuery && !personText.includes(partyQuery)) return;
       const g = goodsById.get(String(x.g)) || {};
       const w = warehousesById.get(String(x.w)) || {};
@@ -198,7 +198,15 @@
       const dependencies = ['meta','party','good','source','warehouse','account'];
       if (scope === 'all' || scope === 'operations') return true;
       if (['cheques','receipts','issues','transfers','warehouseOps','inventory'].includes(scope) && dependencies.includes(recordType)) return true;
-      if (scope === 'inventory') return recordType === 'openingStock' || (recordType === 'operation' && ['receipts','issues','transfers'].includes(opScope));
+      if (scope === 'inventory' || scope === 'warehouseOps') {
+        if (recordType === 'openingStock') return true;
+        if (recordType !== 'operation') return false;
+        if (['receipts','issues','transfers'].includes(opScope)) return true;
+        try {
+          const operation = JSON.parse(String(row && row[8] || '{}'));
+          return Array.isArray(operation.moves) && operation.moves.length > 0;
+        } catch (error) { return false; }
+      }
       if (scope === 'cheques') return recordType === 'carryCheque' || (recordType === 'operation' && opScope === 'cheques');
       if (scope === 'receipts' || scope === 'issues' || scope === 'transfers') return recordType === 'operation' && opScope === scope;
       if (scope === 'warehouseOps') return recordType === 'operation' && ['receipts','issues','transfers'].includes(opScope);
