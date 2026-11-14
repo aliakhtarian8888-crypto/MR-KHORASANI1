@@ -837,12 +837,23 @@ function showExportReceipt(record,downloadRequested){
 }
 function saveBlob(name,blob,options){
  const opts=options||{};
- const downloadRequested=requestBlobDownload(name,blob);
+ let finalName=String(name||'MR-KHORASANI-export.bin');
+ if(opts.showNamePrompt!==false&&typeof window.prompt==='function'){
+  const dot=finalName.lastIndexOf('.'),ext=dot>0?finalName.slice(dot+1):'bin',base=dot>0?finalName.slice(0,dot):finalName;
+  try{
+   const chosen=window.prompt('نام فایل خروجی را تعیین کنید (پسوند .'+ext+' حفظ می‌شود):',base);
+   if(chosen&&chosen.trim()){
+    const clean=chosen.trim().replace(/[\\\\/:*?"<>|]/g,'-').replace(/[. ]+$/g,'').slice(0,140);
+    if(clean)finalName=/\\.[a-z0-9]{1,8}$/i.test(clean)?clean:clean+'.'+ext;
+   }
+  }catch(e){}
+ }
+ const downloadRequested=requestBlobDownload(finalName,blob);
  if(!localExportStore){
   toast(downloadRequested?'درخواست دریافت فایل به مرورگر ارسال شد؛ اما حافظهٔ محلی مرورگر در دسترس نیست.':'ذخیره فایل ممکن نشد؛ مرورگر از Blob یا IndexedDB پشتیبانی نمی‌کند.');
   return downloadRequested;
  }
- localExportStore.save(name,blob).then(async record=>{
+ localExportStore.save(finalName,blob).then(async record=>{
   exportRecordCache.set(record.id,record);
   try{if(navigator.storage?.persist)await navigator.storage.persist()}catch(e){}
   if(opts.showReceipt!==false){
