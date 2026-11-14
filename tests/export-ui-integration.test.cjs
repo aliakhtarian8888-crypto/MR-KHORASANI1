@@ -49,6 +49,9 @@ test('all inventory, cheque and production import/export tools are exposed in th
   assert.match(source, /function excelTransferPanel/);
   assert.match(source, /ACT\.cardexSearch=/);
   assert.match(source, /ACT\.cardexExport=/);
+  assert.match(source, /function chequeRegisterPage/);
+  assert.match(source, /ACT\.chequeRegExport=/);
+  assert.match(source, /buildChequeRegisterRows/);
   assert.match(source, /cardexGoodsSearch/);
   assert.match(source, /cardexPartySearch/);
   assert.match(source, /if\(k==='chequeEntries'\)/);
