@@ -194,27 +194,25 @@
     const records = rows.slice(1).filter(row => {
       const recordType = String(row && row[0] || '');
       const operationType = String(row && row[3] || '');
-      const opScope = recordType === 'operation' ? classifyOperation(operationType) : '';
+      const isOperation = recordType === 'operation' || recordType === 'archivedOperation';
+      const opScope = isOperation ? classifyOperation(operationType) : '';
       const dependencies = ['meta','party','good','source','warehouse','account'];
       if (scope === 'all' || scope === 'operations') return true;
-      if (['cheques','receipts','issues','transfers','warehouseOps','inventory'].includes(scope) && dependencies.includes(recordType)) return true;
+      if (['cheques','receipts','issues','transfers','warehouseOps','inventory'].includes(scope)) {
+        if (dependencies.includes(recordType) || recordType === 'archivedDay') return true;
+      }
       if (scope === 'inventory' || scope === 'warehouseOps') {
         if (recordType === 'openingStock') return true;
-        if (recordType !== 'operation') return false;
+        if (!isOperation) return false;
         if (['receipts','issues','transfers'].includes(opScope)) return true;
         try {
           const operation = JSON.parse(String(row && row[8] || '{}'));
           return Array.isArray(operation.moves) && operation.moves.length > 0;
         } catch (error) { return false; }
       }
-      if (scope === 'cheques') return recordType === 'carryCheque' || (recordType === 'operation' && opScope === 'cheques');
-      if (scope === 'receipts' || scope === 'issues' || scope === 'transfers') return recordType === 'operation' && opScope === scope;
-      if (scope === 'warehouseOps') return recordType === 'operation' && ['receipts','issues','transfers'].includes(opScope);
-      if (scope === 'cardex') return recordType === 'operation' && ['receipts','issues','transfers'].includes(opScope);
-
-
-
-
+      if (scope === 'cheques') return recordType === 'carryCheque' || (isOperation && opScope === 'cheques');
+      if (scope === 'receipts' || scope === 'issues' || scope === 'transfers') return isOperation && opScope === scope;
+      if (scope === 'cardex') return isOperation && ['receipts','issues','transfers'].includes(opScope);
       if (scope === 'warehouses') return recordType === 'warehouse';
       if (scope === 'workers') return recordType === 'worker';
       if (scope === 'boms') return recordType === 'bom';
