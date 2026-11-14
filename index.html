@@ -950,10 +950,80 @@ function basePage(){const t=UI.base;let h=chips([['parties','👥 اشخاص'],[
  if(t==='parties'){const q=UI.q||'';h+=tplBar('parties')+`<div class="card"><input placeholder="جستجوی نام یا کد" data-a="" id="qBox" value="${esc(q)}" oninput="UI.q=this.value;partyList()"><div id="plist">${partyListHtml()}</div></div>`+partyForm()}
  else if(t==='goods')h+=tplBar('goods')+`<div class="card" id="glist">${goodListHtml()}</div>`+goodForm();
  else if(t==='warehouses')h+=can('wh')?warehousePage():'<div class="card warn">دسترسی مدیریت انبار ندارید.</div>';
- else if(t==='stock')h+=repBlock('iv');
+ else if(t==='stock')h+=repBlock('iv')+cardexPage();
  else if(t==='sources')h+=tplBar('sources')+`<div class="card"><div class="hint">مانده اول دوره هر صندوق و بانک در ابتدا صفر است و تا پیش از بستن نخستین روز قابل ویرایش است؛ پس از آن اصلاح فقط با سند اصلاحی ممکن است.</div>${S.sources.map(s=>`<div class="orow" style="flex-wrap:wrap"><div><b>${esc(s.name)}</b><div class="hint">${s.kind} — موجودی فعلی: ${balTxt(B.sb[s.id]||0)}</div></div><div class="acts" style="flex:1;min-width:210px"><input class="money" inputmode="numeric" id="so_${s.id}" placeholder="مانده اول دوره" value="${s.open?money(s.open):''}" ${hasClosed()?'disabled':''}><button class="btn sm" data-a="saveSrcOpen" data-p="${s.id}" ${hasClosed()?'disabled':''}>ذخیره مانده</button><button class="btn sm" data-a="editSrc" data-p="${s.id}">ویرایش</button></div></div>`).join('')}</div>`+srcForm();
  else h+=tplBar('coa')+coaHtml();
  return h}
+function cardexModel(filters){
+ const f=filters||{},openingRows=[];
+ if(S.carry){
+  Object.entries(S.invCarry||{}).forEach(([key,value])=>{
+   const parts=String(key).split('|');if(parts.length!==2)return;
+   openingRows.push({g:parts[0],w:parts[1],q:num(value.q),v:num(value.v)});
+  });
+ }else{
+  S.goods.forEach(g=>warehouseList().forEach(w=>{
+   const opening=w.id==='1'?{q:g.q1,c:g.c1}:w.id==='2'?{q:g.q2,c:g.c2}:((g.opening||{})[w.id]||{});
+   const q=num(opening.q),v=Math.round(q*num(opening.c));
+   if(q||v)openingRows.push({g:g.id,w:w.id,q,v});
+  }));
+ }
+ const movements=[];
+ S.ops.filter(o=>o.status==='active').forEach(o=>{
+  const movementData=B.opd[o.id];if(!movementData||!Array.isArray(movementData.moves))return;
+  const party=S.parties.find(p=>p.id===o.party);
+  movementData.moves.forEach((m,index)=>{
+   if(!m.g||!m.w||(!num(m.q)&&!num(m.v)))return;
+   movements.push({
+    id:o.id+':'+index, date:o.date, no:o.inv||o.no, type:o.type,
+    description:o.desc||'', partyId:o.party||'', partyName:party?.name||'',
+    g:m.g,w:m.w,q:num(m.q),v:num(m.v)
+   });
+  });
+ });
+ return MRKDataTools.buildCardexLedger({
+  goods:S.goods,warehouses:warehouseList(),openingRows,movements,
+  filters:{from:normDate(f.from)||S.fy+'/01/01',to:normDate(f.to)||today(),
+   goodsQuery:f.goodsQuery||'',partyQuery:f.partyQuery||'',warehouseId:f.warehouseId||''}
+ });
+}
+function cardexCurrentFilters(){
+ const d={from:S.fy+'/01/01',to:today(),goodsQuery:'',partyQuery:'',warehouseId:'',...(UI.cardexFilters||{})};
+ const read=id=>$('#'+id)?.value;
+ return {from:normDate(read('cardexFrom')||d.from)||d.from,to:normDate(read('cardexTo')||d.to)||d.to,
+  goodsQuery:String(read('cardexGoodsSearch')??d.goodsQuery).trim(),
+  partyQuery:String(read('cardexPartySearch')??d.partyQuery).trim(),
+  warehouseId:String(read('cardexWarehouse')??d.warehouseId)};
+}
+function cardexPage(){
+ const f={from:S.fy+'/01/01',to:today(),goodsQuery:'',partyQuery:'',warehouseId:'',...(UI.cardexFilters||{})};
+ if(f.to<S.fy+'/01/01')f.to=S.fy+'/12/29';
+ const model=cardexModel(f),opening=new Map(model.opening.map(x=>[x.goodsId+'|'+x.warehouseId,x]));
+ const summaries=model.closing.map(x=>{
+  const o=opening.get(x.goodsId+'|'+x.warehouseId)||{};
+  return [x.code,x.goodsName,x.warehouseName,fmtq(o.quantity||0),fmt(o.value||0),fmtq(x.quantity),fmt(x.value)];
+ });
+ const movementRows=model.movements.map(x=>[
+  fa(x.date),fa(x.no||''),x.type,x.code,x.goodsName,x.partyName||'—',x.warehouseName,
+  fmtq(x.inQuantity),fmtq(x.outQuantity),fmt(x.inValue),fmt(x.outValue),
+  fmtq(x.balanceQty),fmt(x.balanceValue)
+ ]);
+ const personNote=f.partyQuery?'<div class="hint">جست‌وجوی شخص فقط اسناد مرتبط با همان شخص را محدود می‌کند؛ مانده اول و پایان، موجودی واقعی کالا در کل انبار انتخاب‌شده است و به شخص تخصیص داده نمی‌شود.</div>':'';
+ return '<div class="card"><div class="ftitle">کارتکس کالا و انبارها</div><div class="grid2"><div><label>جست‌وجوی کالا (کد یا نام)</label><input id="cardexGoodsSearch" value="'+esc(f.goodsQuery||'')+'" placeholder="مثلاً کد 1101 یا آرد"></div><div><label>جست‌وجوی شخص (نام یا کد)</label><input id="cardexPartySearch" value="'+esc(f.partyQuery||'')+'" placeholder="نام مشتری یا تأمین‌کننده"></div><div><label>از تاریخ</label><input id="cardexFrom" value="'+esc(fa(f.from))+'" placeholder="'+fa('1405/01/01')+'"></div><div><label>تا تاریخ</label><input id="cardexTo" value="'+esc(fa(f.to))+'" placeholder="'+fa('1405/12/29')+'"></div><div><label>انبار</label><select id="cardexWarehouse">'+sel([['','همه انبارها'],...warehouseOptions()],f.warehouseId)+'</select></div></div><div class="row mt"><button class="btn pri" data-a="cardexSearch">جست‌وجو و نمایش کارتکس</button><button class="btn" data-a="cardexExport">خروجی اکسل کارتکس</button><button class="btn" data-a="exportExcelScope" data-p="inventory">خروجی اکسل موجودی و گردش اسناد</button></div>'+personNote+'</div>'+
+ '<div class="card"><div class="ftitle">مانده اول و پایان دوره بر اساس انبار</div>'+tbl(['کد کالا','نام کالا','انبار','تعداد اول دوره','ارزش اول دوره (ریال)','تعداد پایان دوره','ارزش پایان دوره (ریال)'],summaries)+'</div>'+
+ '<div class="card"><div class="ftitle">ریزگردش کارتکس ('+fa(model.movements.length)+' ردیف)</div>'+tbl(['تاریخ','شماره سند','نوع عملیات','کد کالا','نام کالا','شخص مرتبط','انبار','ورودی','خروجی','ارزش ورودی','ارزش خروجی','مانده پس از سند','ارزش مانده'],movementRows)+'</div>';
+}
+ACT.cardexSearch=()=>{UI.cardexFilters=cardexCurrentFilters();render()};
+ACT.cardexExport=()=>{
+ const f=cardexCurrentFilters(),model=cardexModel(f);
+ const opening=new Map(model.opening.map(x=>[x.goodsId+'|'+x.warehouseId,x]));
+ const rows=[['گزارش کارتکس کالا','از '+f.from,'تا '+f.to,'شخص: '+(f.partyQuery||'همه'),'کالا: '+(f.goodsQuery||'همه'),'انبار: '+(f.warehouseId||'همه')],['کد کالا','نام کالا','انبار','تعداد اول دوره','ارزش اول دوره','تعداد پایان دوره','ارزش پایان دوره']];
+ model.closing.forEach(x=>{const o=opening.get(x.goodsId+'|'+x.warehouseId)||{};rows.push([x.code,x.goodsName,x.warehouseName,num(o.quantity),num(o.value),num(x.quantity),num(x.value)])});
+ rows.push([]);rows.push(['ریزگردش']);rows.push(['شناسه سند','تاریخ','شماره سند','نوع عملیات','کد کالا','نام کالا','شخص مرتبط','انبار','ورودی','خروجی','ارزش ورودی','ارزش خروجی','مانده پس از سند','ارزش مانده']);
+ model.movements.forEach(x=>rows.push([x.id,x.date,x.no||'',x.type,x.code,x.goodsName,x.partyName,x.warehouseName,num(x.inQuantity),num(x.outQuantity),num(x.inValue),num(x.outValue),num(x.balanceQty),num(x.balanceValue)]));
+ saveBlob(fname('کارتکس کالا','xlsx'),xlsxBlob(rows,'کارتکس کالا'));
+ audit('خروجی','Excel کارتکس کالا',f.goodsQuery||'همه کالاها','',model.movements.length);save();
+};
 ACT.bt=p=>{UI.base=p;UI.editB=null;UI.q='';render()};
 const partyListHtml=()=>{const q=(UI.q||'').trim();return S.parties.filter(p=>!q||p.name.includes(q)||String(p.code||'').includes(en(q))).map(p=>`<div class="orow"><div><b>${esc(p.name)}</b> <span class="badge">${p.kind}</span><div class="hint">کد ${fa(p.code||'')} — ${fa(p.phone||'')} — مانده: ${balTxt(B.pb[p.id]||0)}</div></div><div class="acts"><button class="btn sm" data-a="editParty" data-p="${p.id}">ویرایش</button>${(B.pb[p.id]||0)===0&&!B.docs.some(d=>d.lines.some(l=>l.taf===p.id))?`<button class="btn sm dng" data-a="delParty" data-p="${p.id}">حذف</button>`:''}</div></div>`).join('')||'<div class="hint">شخصی ثبت نشده است.</div>'};
 function partyList(){const e=$('#plist');if(e)e.innerHTML=partyListHtml()}
