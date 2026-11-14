@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - build/android-apk-pipeline
+      - feature/excel-transfer-all-modules
   pull_request:
     branches: [main]
   workflow_dispatch:
