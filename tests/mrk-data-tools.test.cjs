@@ -52,3 +52,14 @@ test('moves before the selected date into opening balance', () => {
   assert.equal(rows[0].outQty, 1);
   assert.equal(rows[0].closeQty, 3);
 });
+
+test('refuses ambiguous partial headers instead of guessing a wrong column order', () => {
+  const result = mapImportRows([
+    ['گزارش موجودی'],
+    ['نام کالا', 'تعداد کل', 'یادداشت'],
+    ['کالای الف', 12, 'انبار اصلی']
+  ], ['کد کالا', 'نام کالا', 'تاریخ', 'مبلغ', 'وضعیت', 'انبار']);
+  assert.equal(result.mode, 'ambiguous-header');
+  assert.equal(result.rows.length, 0);
+  assert.equal(result.matched, 1);
+});
