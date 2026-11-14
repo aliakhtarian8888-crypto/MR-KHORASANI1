@@ -12,7 +12,7 @@ const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 test('browser export store is loaded before the accounting application script and cached offline', () => {
   assert.match(html, /<script src="mrk-export-store\.js"><\/script><script>'use strict';/);
   assert.match(sw, /mrk-export-store\.js/);
-  assert.match(sw, /2\.8\.3-local-export-store/);
+  assert.match(sw, /2\.9\.0-excel-inventory-transfer/);
 });
 
 test('the complete inline accounting application script parses as valid JavaScript', () => {
@@ -24,7 +24,7 @@ test('the complete inline accounting application script parses as valid JavaScri
   assert.notEqual(end, -1, 'main application script must close');
   const source = html.slice(codeStart, end);
   assert.doesNotThrow(() => new vm.Script(source, { filename: 'index-inline-app.js' }));
-  assert.match(source, /localExportStore\.save\(name,blob\)/);
+  assert.match(source, /localExportStore\\.save\\(finalName,blob\\)/);
   assert.match(source, /showExportReceipt\(record,downloadRequested\)/);
   assert.match(source, /ACT\.savedExports=/);
 });
@@ -37,4 +37,20 @@ test('export success is not reported as a completed device download before stora
   assert.doesNotMatch(source, /toast\('فایل اکسل در پوشهٔ دانلود ذخیره شد'\)/);
   assert.doesNotMatch(source, /toast\('فایل PDF در پوشهٔ دانلود ذخیره شد'\)/);
   assert.match(source, /فایل خروجی در حافظهٔ مرورگر ذخیره شد/);
+});
+
+test('all inventory, cheque and production import/export tools are exposed in the live app', () => {
+  const start = html.indexOf("<script>'use strict';");
+  const codeStart = start + '<script>'.length;
+  const end = html.indexOf('</script>', codeStart);
+  const source = html.slice(codeStart, end);
+  assert.match(source, /function importOperationalScope/);
+  assert.match(source, /function exportExcelScope/);
+  assert.match(source, /function excelTransferPanel/);
+  assert.match(source, /ACT\.cardexSearch=/);
+  assert.match(source, /ACT\.cardexExport=/);
+  assert.match(source, /cardexGoodsSearch/);
+  assert.match(source, /cardexPartySearch/);
+  assert.match(source, /if\(k==='chequeEntries'\)/);
+  assert.match(source, /if\(k==='warehouseOps'\)/);
 });
