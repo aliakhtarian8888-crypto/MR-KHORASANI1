@@ -104,3 +104,39 @@ test('file import passes the selected section explicitly and explains unsupporte
   assert.match(source, /onFile\(f,kind\)/);
   assert.match(source, /فرمت XLS قدیمی پشتیبانی نمی‌شود/);
 });
+
+test('opening balance workbench lists all existing parties and goods without deleting master names',()=>{
+ const start=html.indexOf("<script>'use strict';");
+ const source=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
+ assert.match(source,/function openingBalancesPage\(\)/);
+ assert.match(source,/S\.parties\.map\(p=>/);
+ assert.match(source,/S\.goods\.map\(g=>/);
+ assert.match(source,/ACT\.saveOpeningBalances=/);
+ assert.match(source,/p\.open=x\.amount;p\.side=x\.side/);
+ assert.match(source,/g\.q1=x\.q;g\.c1=x\.cost/);
+ assert.match(source,/مانده اول دوره شخص - '\+p\.name/);
+ assert.match(source,/موجودی اول دوره کالا - '\+g\.name/);
+});
+test('admin password field can be shown while stored passwords remain unreadable',()=>{
+ const start=html.indexOf("<script>'use strict';");
+ const source=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
+ assert.match(source,/data-a="toggleUserPassword"/);
+ assert.match(source,/ACT\.toggleUserPassword=/);
+ assert.match(source,/رمز فعلی کاربران.*قابل بازیابی یا نمایش نیست/);
+});
+test('admin user report includes guest sessions and QR entry image is embedded in app',()=>{
+ const start=html.indexOf("<script>'use strict';");
+ const source=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
+ assert.match(source,/گزارش یکپارچه کاربران و مهمان‌ها/);
+ assert.match(source,/data-a="loadGuestAudit"/);
+ assert.match(source,/function guestQrSvg\(\)/);
+ assert.match(source,/GUEST_QR_ROWS=/);
+ assert.match(source,/\?g=1/);
+});
+test('QR guest link automatically issues a guest session without a user password',()=>{
+ const source=fs.readFileSync(path.join(root,'guest-runtime.js'),'utf8');
+ assert.match(source,/autoStartGuest: query\.get\('guest'\) === '1' \|\| query\.get\('g'\) === '1'/);
+ const start=html.indexOf("<script>'use strict';");
+ const inline=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
+ assert.match(inline,/readEntry\(location\)\?\.autoStartGuest/);
+});
