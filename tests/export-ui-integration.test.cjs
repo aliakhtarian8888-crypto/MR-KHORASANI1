@@ -124,13 +124,13 @@ test('admin password field can be shown while stored passwords remain unreadable
  assert.match(source,/ACT\.toggleUserPassword=/);
  assert.match(source,/رمز فعلی کاربران.*قابل بازیابی یا نمایش نیست/);
 });
-test('admin user report includes guest sessions and QR entry image is embedded in app',()=>{
+test('admin user report includes guest sessions and a separate guest QR asset',()=>{
  const start=html.indexOf("<script>'use strict';");
  const source=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
  assert.match(source,/گزارش یکپارچه کاربران و مهمان‌ها/);
  assert.match(source,/data-a="loadGuestAudit"/);
  assert.match(source,/function guestQrSvg\(\)/);
- assert.match(source,/guest-entry-qr\\.png/);
+ assert.ok(source.includes('guest-entry-qr.png'));
  assert.match(source,/\?g=1/);
 });
 test('QR guest link automatically issues a guest session without a user password',()=>{
@@ -160,13 +160,13 @@ test('admin password visibility is a reveal toggle and stored passwords are not 
  assert.match(source,/ACT\.toggleUserPassword=/);
  assert.match(source,/رمز فعلی کاربران.*قابل بازیابی یا نمایش نیست/);
 });
-test('admin user settings show guest audit records alongside company users and contain a static QR',()=>{
+test('admin user settings show guest audit records and point to the browser-only QR asset',()=>{
  const start=html.indexOf("<script>'use strict';");
  const source=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
  assert.match(source,/گزارش یکپارچه کاربران و مهمان‌ها/);
  assert.match(source,/data-a="loadGuestAudit"/);
  assert.match(source,/function guestQrSvg\(\)/);
- assert.match(source,/guest-entry-qr\\.png/);
+ assert.ok(source.includes('guest-entry-qr.png'));
  assert.match(source,/\?g=1/);
 });
 test('guest QR entry automatically starts a short-lived guest session without credentials',()=>{
