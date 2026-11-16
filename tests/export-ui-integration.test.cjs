@@ -12,7 +12,7 @@ const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 test('browser export store is loaded before the accounting application script and cached offline', () => {
   assert.match(html, /<script src="mrk-export-store\.js"><\/script><script>'use strict';/);
   assert.match(sw, /mrk-export-store\.js/);
-  assert.match(sw, /2\.9\.2-opening-balances-guest-qr/);
+  assert.match(sw, /2\.9\.3-role-matrix/);
 });
 
 test('the complete inline accounting application script parses as valid JavaScript', () => {
@@ -175,4 +175,28 @@ test('guest QR entry automatically starts a short-lived guest session without cr
  const start=html.indexOf("<script>'use strict';");
  const inline=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
  assert.match(inline,/readEntry\(location\)\?\.autoStartGuest/);
+});
+
+test('roles page renders a user-by-section checkbox access matrix and persists individual grants to the company API',()=>{
+ const start=html.indexOf("<script>'use strict';");
+ const source=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
+ assert.match(source,/function permissionMatrixPage\(\)/);
+ assert.match(source,/UI\.remoteUsers/);
+ assert.match(source,/PERMS\.map/);
+ assert.match(source,/data-user-perm/);
+ assert.match(source,/data-user-id/);
+ assert.match(source,/ACT\.setUserPermission=async/);
+ assert.match(source,/MRKCloud\.manageUsers\(\{action:'update',companyId:UI\.companyId,userId,permissionKeys/);
+});
+test("permission matrix updates the selected user's permissions without mutating shared role defaults",()=>{
+ const start=html.indexOf("<script>'use strict';");
+ const source=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
+ assert.match(source,/const next=checked\?\[\.\.\.current,key\]:current\.filter/);
+ assert.doesNotMatch(source,/ACT\.setUserPermission[\s\S]{0,500}S\.roles\[/);
+});
+
+test('permission matrix prevents a user from being left with an empty permission set',()=>{
+ const start=html.indexOf("<script>'use strict';");
+ const source=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
+ assert.match(source,/if\(!checked&&next\.length===0\)return toast\('برای هر کاربر دست‌کم یک دسترسی باید باقی بماند'\)/);
 });
