@@ -176,3 +176,21 @@ test('guest QR entry automatically starts a short-lived guest session without cr
  const inline=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
  assert.match(inline,/readEntry\(location\)\?\.autoStartGuest/);
 });
+
+test('roles page renders a user-by-section checkbox access matrix and persists individual grants to the company API',()=>{
+ const start=html.indexOf("<script>'use strict';");
+ const source=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
+ assert.match(source,/function permissionMatrixPage\(\)/);
+ assert.match(source,/UI\.remoteUsers/);
+ assert.match(source,/PERMS\.map/);
+ assert.match(source,/data-user-perm/);
+ assert.match(source,/data-user-id/);
+ assert.match(source,/ACT\.setUserPermission=async/);
+ assert.match(source,/MRKCloud\.manageUsers\(\{action:'update',companyId:UI\.companyId,userId,permissionKeys/);
+});
+test('permission matrix updates the selected user's permissions without mutating shared role defaults',()=>{
+ const start=html.indexOf("<script>'use strict';");
+ const source=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
+ assert.match(source,/const next=checked\?\[\.\.\.current,key\]:current\.filter/);
+ assert.doesNotMatch(source,/ACT\.setUserPermission[\s\S]{0,500}S\.roles\[/);
+});
