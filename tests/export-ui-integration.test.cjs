@@ -188,7 +188,7 @@ test('roles page renders a user-by-section checkbox access matrix and persists i
  assert.match(source,/ACT\.setUserPermission=async/);
  assert.match(source,/MRKCloud\.manageUsers\(\{action:'update',companyId:UI\.companyId,userId,permissionKeys/);
 });
-test('permission matrix updates the selected user's permissions without mutating shared role defaults',()=>{
+test("permission matrix updates the selected user's permissions without mutating shared role defaults",()=>{
  const start=html.indexOf("<script>'use strict';");
  const source=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
  assert.match(source,/const next=checked\?\[\.\.\.current,key\]:current\.filter/);
