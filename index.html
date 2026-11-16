@@ -1,4 +1,4 @@
-<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#081a35"><meta name="application-version" content="2.9.0-excel-inventory-transfer"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="MR KHORASANI"><meta name="format-detection" content="telephone=no"><meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://klomsegarpfdkhkmoazy.supabase.co; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'"><title>MR, KHORASANI — حسابداری و مدیریت انبار</title><link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/svg+xml" href="icon.svg"><link rel="apple-touch-icon" href="icon-192.png"><style>:root{--p:#081a35;--p2:#12315d;--a:#d6ad55;--bg:#071326;--ink:#f4ead2;--mut:#b4c0d2;--card:#0d203d;--line:#314563;--bad:#f07870;--good:#d6ad55;--i1:#d6ad55;--i2:#d6ad55;--i3:#d6ad55;--i4:#d6ad55;--i5:#d6ad55;--i6:#d6ad55;--i7:#d6ad55;--i8:#d6ad55}
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#081a35"><meta name="application-version" content="2.9.1-native-file-transfer"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="MR KHORASANI"><meta name="format-detection" content="telephone=no"><meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://klomsegarpfdkhkmoazy.supabase.co; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'"><title>MR, KHORASANI — حسابداری و مدیریت انبار</title><link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/svg+xml" href="icon.svg"><link rel="apple-touch-icon" href="icon-192.png"><style>:root{--p:#081a35;--p2:#12315d;--a:#d6ad55;--bg:#071326;--ink:#f4ead2;--mut:#b4c0d2;--card:#0d203d;--line:#314563;--bad:#f07870;--good:#d6ad55;--i1:#d6ad55;--i2:#d6ad55;--i3:#d6ad55;--i4:#d6ad55;--i5:#d6ad55;--i6:#d6ad55;--i7:#d6ad55;--i8:#d6ad55}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Noto Naskh Arabic","Noto Sans Arabic",Arial,sans-serif;font-size:15px;line-height:1.7;padding:0 0 calc(70px + env(safe-area-inset-bottom,0px));direction:rtl;padding-top:env(safe-area-inset-top,0px)}
 header{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;position:sticky;top:0;z-index:20;padding:8px 12px 0;border-bottom:3px solid var(--a)}
@@ -647,7 +647,7 @@ ACT.goType=p=>{UI.page='ops';UI.grp=TI[p].g;UI.type=p;UI.edit=null;UI.draft=newD
 
 function dlg({title,msg,input,ok,cancel,pw}){return new Promise(res=>{const d=document.createElement('div');d.className='modal';d.innerHTML=`<div class="mbox"><b>${esc(title)}</b>${msg?`<p>${esc(msg)}</p>`:''}${input!=null?`<input id="mIn" ${pw?'type="password" inputmode="numeric"':''} value="${esc(input)}">`:''}<div class="row mt"><button class="btn pri" id="mOk">${ok||'تأیید'}</button><button class="btn" id="mNo">${cancel||'انصراف'}</button></div></div>`;document.body.appendChild(d);const mi=d.querySelector('#mIn');if(mi)setTimeout(()=>mi.focus(),50);const close=v=>{d.remove();res(v)};d.querySelector('#mOk').onclick=()=>close(mi?mi.value:true);d.querySelector('#mNo').onclick=()=>close(null)})}
 document.addEventListener('input',e=>{const t=e.target;if(t.classList&&t.classList.contains('money')){const v=money(t.value);if(v!==t.value)t.value=v}});
-document.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.imp){UI.impKind=t.dataset.imp;const f=t.files[0];onFile(f).finally(()=>{try{t.value=''}catch(x){}})}if(t.dataset&&t.dataset.restore!==undefined){const f=t.files[0];onRestore(f).finally(()=>{try{t.value=''}catch(x){}})}});
+document.addEventListener('change',e=>{const t=e.target;if(t&&t.type==='file'&&t.dataset&&t.dataset.imp){const kind=t.dataset.imp,f=t.files&&t.files[0];if(!f)return;UI.impKind=kind;t.disabled=true;onFile(f,kind).finally(()=>{t.disabled=false;try{t.value=''}catch(x){}})}if(t&&t.dataset&&t.dataset.restore!==undefined){const f=t.files&&t.files[0];if(!f)return;onRestore(f).finally(()=>{try{t.value=''}catch(x){}})}});
 
 /* ---------- گزارش‌ها ---------- */
 const REP={};
@@ -789,27 +789,63 @@ async function readXlsx(buf){const u=new Uint8Array(buf),dv=new DataView(buf);le
  doc.querySelectorAll('row').forEach(r=>{const row=[];r.querySelectorAll('c').forEach(c=>{const ref=c.getAttribute('r')||'',m=ref.match(/^([A-Z]+)/);let ci=0;if(m)for(const ch of m[1])ci=ci*26+ch.charCodeAt(0)-64;ci--;const t=c.getAttribute('t');let v='';if(t==='s'){const vv=c.querySelector('v');v=vv?shared[+vv.textContent]:''}else if(t==='inlineStr')v=[...c.querySelectorAll('t')].map(z=>z.textContent).join('');else{const vv=c.querySelector('v');v=vv?vv.textContent:''}row[ci]=v});rows.push(Array.from(row,x=>x==null?'':x))});return rows}
 const localExportStore=window.MRKExportStore?.createBrowserStore(window.indexedDB);
 const exportRecordCache=new Map();
+const nativeSaveRequests=new Map();
+let nativeSaveSequence=0;
+window.MRKNativeFileResult=function(requestId,success,message){
+ const pending=nativeSaveRequests.get(String(requestId));
+ if(!pending)return;
+ nativeSaveRequests.delete(String(requestId));
+ if(success)pending.resolve({saved:true,message:String(message||'فایل در مسیر انتخاب‌شده ذخیره شد.')});
+ else pending.reject(new Error(String(message||'ذخیره فایل انجام نشد.')));
+};
 function requestBlobDownload(name,blob){
- try{
-  if(window.AndroidBridge&&typeof window.AndroidBridge.saveFile==='function'){
+ if(window.AndroidBridge&&typeof window.AndroidBridge.saveFile==='function'){
+  return new Promise((resolve,reject)=>{
+   const requestId='mrk-save-'+Date.now()+'-'+(++nativeSaveSequence);
+   nativeSaveRequests.set(requestId,{resolve,reject});
    const reader=new FileReader();
-   reader.onload=()=>{const data=String(reader.result||'').split(',')[1]||'';if(!data){toast('خواندن فایل خروجی ناموفق بود');return}window.AndroidBridge.saveFile(name,blob.type||'application/octet-stream',data)};
-   reader.onerror=()=>toast('آماده‌سازی فایل برای ذخیره در گوشی ناموفق بود');
+   reader.onload=()=>{
+    const data=String(reader.result||'').split(',')[1]||'';
+    if(!data){nativeSaveRequests.delete(requestId);reject(new Error('خواندن فایل خروجی ناموفق بود'));return}
+    try{window.AndroidBridge.saveFile(requestId,name,blob.type||'application/octet-stream',data)}
+    catch(error){nativeSaveRequests.delete(requestId);reject(error)}
+   };
+   reader.onerror=()=>{nativeSaveRequests.delete(requestId);reject(new Error('آماده‌سازی فایل برای ذخیره در گوشی ناموفق بود'))};
    reader.readAsDataURL(blob);
-   return true;
-  }
+  });
+ }
+ if(typeof window.showSaveFilePicker==='function'){
+  return (async()=>{
+   const ext=(String(name).split('.').pop()||'').toLowerCase();
+   const mime=ext==='xlsx'?'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':ext==='pdf'?'application/pdf':ext==='json'?'application/json':ext==='csv'?'text/csv':'application/octet-stream';
+   const handle=await window.showSaveFilePicker({suggestedName:name,types:[{description:'فایل خروجی MR,KHORASANI',accept:{[mime]:['.'+ext]}}]});
+   const writable=await handle.createWritable();
+   await writable.write(blob);
+   await writable.close();
+   return{saved:true,message:'فایل در مسیر انتخاب‌شده ذخیره شد.'};
+  })();
+ }
+ try{
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download=name;a.rel='noopener';a.style.cssText='position:fixed;left:-10000px;top:0';
   document.body.appendChild(a);a.click();
   setTimeout(()=>{URL.revokeObjectURL(url);a.remove()},30000);
-  return true;
- }catch(e){return false}
+  return Promise.resolve({saved:false,requested:true,message:'درخواست دانلود به مرورگر سپرده شد؛ پوشهٔ Downloads را بررسی کنید.'});
+ }catch(error){return Promise.reject(error)}
 }
-function downloadExportRecord(record){
+async function saveRecordToDevice(record){
  if(!record)return toast('فایل ذخیره‌شده پیدا نشد');
- const sent=requestBlobDownload(record.name,record.blob);
- toast(sent?'درخواست دریافت فایل به مرورگر ارسال شد؛ پوشهٔ Downloads را بررسی کنید.':'دریافت مستقیم در این محیط پشتیبانی نمی‌شود؛ نسخهٔ فایل در حافظهٔ مرورگر باقی مانده است.');
+ try{
+  const result=await requestBlobDownload(record.name,record.blob);
+  toast(result.saved?('فایل «'+record.name+'» در مسیر انتخاب‌شده ذخیره شد.'):result.message);
+  return result;
+ }catch(error){
+  if(error&&error.name==='AbortError')return;
+  toast('ذخیره فایل ناموفق بود: '+(error?.message||'خطای نامشخص'));
+  return null;
+ }
 }
+function downloadExportRecord(record){return saveRecordToDevice(record)}
 async function shareExportRecord(record){
  if(!record)return toast('فایل ذخیره‌شده پیدا نشد');
  if(typeof File!=='undefined'&&typeof navigator.share==='function'){
@@ -820,75 +856,64 @@ async function shareExportRecord(record){
     toast('فایل به منوی اشتراک‌گذاری دستگاه تحویل شد؛ مقصد ذخیره را انتخاب کنید.');
     return;
    }
-  }catch(e){if(e&&e.name==='AbortError')return}
+  }catch(error){if(error&&error.name==='AbortError')return}
  }
- downloadExportRecord(record);
+ return saveRecordToDevice(record);
 }
-function showExportReceipt(record,downloadRequested){
+function showExportReceipt(record){
  exportRecordCache.set(record.id,record);
  const m=document.createElement('div');m.className='modal';
- const note=downloadRequested?'درخواست دریافت مستقیم نیز به مرورگر ارسال شد؛ ذخیره در پوشهٔ Downloads به محیط اجرا بستگی دارد.':'این محیط دریافت مستقیم را نپذیرفت؛ از گزینهٔ انتقال به دستگاه استفاده کنید.';
- m.innerHTML='<div class="mbox"><b>فایل خروجی آماده است</b><p>فایل «'+esc(record.name)+'» در حافظهٔ محلی مرورگر ذخیره شد.</p><div class="info">حجم: '+esc(window.MRKExportStore.formatBytes(record.size))+' — '+esc(new Date(record.createdAt).toLocaleString('fa-IR'))+'</div><p class="hint">'+note+' نسخهٔ محلی فایل تا زمان پاک‌کردن داده‌های مرورگر یا حذف دستی آن باقی می‌ماند.</p><div class="row mt"><button class="btn pri" id="exportSaveToDevice">ذخیره در حافظه تلفن</button><button class="btn" id="exportShareToDevice">اشتراک‌گذاری / ذخیره در فایل‌ها</button><button class="btn" id="exportSavedList">فایل‌های ذخیره‌شده</button><button class="btn" id="exportReceiptClose">بستن</button></div></div>';
+ const storageNote=record.persisted?'یک نسخهٔ پشتیبان موقت نیز در حافظهٔ همین مرورگر نگهداری می‌شود.':'این فایل در فهرست موقت برنامه نگهداری می‌شود؛ برای ذخیره پایدار، مسیر حافظه گوشی را انتخاب کنید.';
+ m.innerHTML='<div class="mbox"><b>فایل خروجی آماده است</b><p>فایل «'+esc(record.name)+'» آماده ذخیره است.</p><div class="info">حجم: '+esc(window.MRKExportStore?.formatBytes(record.size)||'')+' — '+esc(new Date(record.createdAt).toLocaleString('fa-IR'))+'</div><p class="hint">'+storageNote+' با زدن «ذخیره در حافظه تلفن»، پوشه یا مسیر دلخواه را در پنجره سیستم انتخاب کنید؛ نتیجه ذخیره پس از نوشتن واقعی فایل اعلام می‌شود.</p><div class="row mt"><button class="btn pri" id="exportSaveToDevice">ذخیره در حافظه تلفن</button><button class="btn" id="exportShareToDevice">اشتراک‌گذاری / ذخیره در فایل‌ها</button><button class="btn" id="exportSavedList">فایل‌های ذخیره‌شده</button><button class="btn" id="exportReceiptClose">بستن</button></div></div>';
  document.body.appendChild(m);
- m.querySelector('#exportSaveToDevice').onclick=()=>downloadExportRecord(record);
+ m.querySelector('#exportSaveToDevice').onclick=()=>saveRecordToDevice(record);
  m.querySelector('#exportShareToDevice').onclick=()=>shareExportRecord(record);
  m.querySelector('#exportSavedList').onclick=()=>{m.remove();openSavedExports()};
  m.querySelector('#exportReceiptClose').onclick=()=>m.remove();
 }
 function saveBlob(name,blob,options){
  const opts=options||{};
- let finalName=String(name||'MR-KHORASANI-export.bin');
- if(opts.showNamePrompt!==false&&typeof window.prompt==='function'){
-  const dot=finalName.lastIndexOf('.'),ext=dot>0?finalName.slice(dot+1):'bin',base=dot>0?finalName.slice(0,dot):finalName;
-  try{
-   const chosen=window.prompt('نام فایل خروجی را تعیین کنید (پسوند .'+ext+' حفظ می‌شود):',base);
-   if(chosen&&chosen.trim()){
-    const clean=chosen.trim().replace(/[\\\\/:*?"<>|]/g,'-').replace(/[. ]+$/g,'').slice(0,140);
-    if(clean)finalName=/\\.[a-z0-9]{1,8}$/i.test(clean)?clean:clean+'.'+ext;
-   }
-  }catch(e){}
- }
- const downloadRequested=requestBlobDownload(finalName,blob);
+ const clean=String(name||'MR-KHORASANI-export.bin').replace(/[\\/:*?"<>|]/g,'-').replace(/[. ]+$/g,'').slice(0,180);
+ const seed={id:'pending_'+Date.now()+'_'+(++nativeSaveSequence),name:clean,type:String(blob?.type||'application/octet-stream'),size:Number(blob?.size)||0,createdAt:Date.now(),blob,persisted:false};
  if(!localExportStore){
-  toast(downloadRequested?'درخواست دریافت فایل به مرورگر ارسال شد؛ اما حافظهٔ محلی مرورگر در دسترس نیست.':'ذخیره فایل ممکن نشد؛ مرورگر از Blob یا IndexedDB پشتیبانی نمی‌کند.');
-  return downloadRequested;
+  exportRecordCache.set(seed.id,seed);
+  if(opts.showReceipt!==false){toast('فایل آماده است؛ ذخیره‌ساز محلی مرورگر در دسترس نیست.');showExportReceipt(seed)}
+  return false;
  }
- localExportStore.save(finalName,blob).then(async record=>{
+ localExportStore.save(clean,blob).then(async record=>{
+  record.persisted=true;
   exportRecordCache.set(record.id,record);
-  try{if(navigator.storage?.persist)await navigator.storage.persist()}catch(e){}
-  if(opts.showReceipt!==false){
-   toast('فایل خروجی در حافظهٔ مرورگر ذخیره شد.');
-   showExportReceipt(record,downloadRequested);
-  }
+  try{if(navigator.storage?.persist)await navigator.storage.persist()}catch(error){}
+  if(opts.showReceipt!==false){toast('فایل آماده شد؛ برای ذخیره در حافظه گوشی مسیر را انتخاب کنید.');showExportReceipt(record)}
  }).catch(error=>{
-  const prefix=downloadRequested?'درخواست دریافت به مرورگر ارسال شد؛ اما ':'';
-  toast(prefix+'ذخیره در حافظهٔ مرورگر ناموفق بود: '+(error?.message||'خطای نامشخص'));
+  exportRecordCache.set(seed.id,seed);
+  if(opts.showReceipt!==false){toast('ذخیره موقت فایل ناموفق بود؛ نسخه آماده انتقال به گوشی است. '+(error?.message||''));showExportReceipt(seed)}
  });
- return downloadRequested;
+ return true;
 }
 async function openSavedExports(){
- if(!localExportStore)return toast('حافظهٔ محلی مرورگر در دسترس نیست');
+ if(!localExportStore)return toast('حافظهٔ محلی مرورگر در دسترس نیست؛ فایل‌های همین نشست در حافظه موقت هستند.');
  try{
   const rows=await localExportStore.list();
-  rows.forEach(r=>exportRecordCache.set(r.id,r));
+  rows.forEach(r=>{r.persisted=true;exportRecordCache.set(r.id,r)});
   const m=document.createElement('div');m.className='modal';
-  const body=rows.length?rows.map(r=>'<div class="orow" style="align-items:center;gap:8px;flex-wrap:wrap"><div style="min-width:150px;flex:1"><b>'+esc(r.name)+'</b><div class="hint">'+esc(window.MRKExportStore.formatBytes(r.size))+' — '+esc(new Date(r.createdAt).toLocaleString('fa-IR'))+'</div></div><div class="acts"><button class="btn sm" data-export-action="download" data-export-id="'+esc(r.id)+'">دریافت</button><button class="btn sm" data-export-action="share" data-export-id="'+esc(r.id)+'">اشتراک</button><button class="btn sm" data-export-action="delete" data-export-id="'+esc(r.id)+'">حذف</button></div></div>').join(''):'<p class="hint">هنوز فایلی در حافظهٔ مرورگر ذخیره نشده است.</p>';
-  m.innerHTML='<div class="mbox"><b>فایل‌های خروجی ذخیره‌شده</b><p class="hint">فایل‌ها فقط در حافظهٔ محلی همین مرورگر/دستگاه نگهداری می‌شوند و به سرور ارسال نمی‌شوند.</p><div style="max-height:55vh;overflow:auto">'+body+'</div><div class="row mt"><button class="btn" id="savedExportsClose">بستن</button></div></div>';
+  const body=rows.length?rows.map(r=>'<div class="orow" style="align-items:center;gap:8px;flex-wrap:wrap"><div style="min-width:150px;flex:1"><b>'+esc(r.name)+'</b><div class="hint">'+esc(window.MRKExportStore.formatBytes(r.size))+' — '+esc(new Date(r.createdAt).toLocaleString('fa-IR'))+'</div></div><div class="acts"><button class="btn sm" data-export-action="download" data-export-id="'+esc(r.id)+'">ذخیره در گوشی</button><button class="btn sm" data-export-action="share" data-export-id="'+esc(r.id)+'">اشتراک</button><button class="btn sm" data-export-action="delete" data-export-id="'+esc(r.id)+'">حذف</button></div></div>').join(''):'<p class="hint">هنوز فایلی در حافظهٔ مرورگر ذخیره نشده است.</p>';
+  m.innerHTML='<div class="mbox"><b>فایل‌های خروجی ذخیره‌شده</b><p class="hint">این نسخه‌ها در حافظهٔ محلی همین مرورگر نگهداری می‌شوند و برای انتقال به حافظه گوشی، مسیر ذخیره را انتخاب کنید.</p><div style="max-height:55vh;overflow:auto">'+body+'</div><div class="row mt"><button class="btn" id="savedExportsClose">بستن</button></div></div>';
   document.body.appendChild(m);
   m.querySelector('#savedExportsClose').onclick=()=>m.remove();
   m.querySelectorAll('[data-export-action]').forEach(button=>button.addEventListener('click',async()=>{
    const id=button.dataset.exportId,action=button.dataset.exportAction,record=exportRecordCache.get(id);
-   if(action==='download')return downloadExportRecord(record);
+   if(action==='download')return saveRecordToDevice(record);
    if(action==='share')return shareExportRecord(record);
    if(action==='delete'){
     if(!confirm('این فایل خروجی از حافظهٔ مرورگر حذف شود؟'))return;
-    try{await localExportStore.remove(id);exportRecordCache.delete(id);m.remove();openSavedExports();toast('فایل از حافظهٔ مرورگر حذف شد')}catch(e){toast('حذف فایل ناموفق بود: '+(e?.message||''))}
+    try{await localExportStore.remove(id);exportRecordCache.delete(id);m.remove();openSavedExports();toast('فایل از حافظهٔ مرورگر حذف شد')}catch(error){toast('حذف فایل ناموفق بود: '+(error?.message||''))}
    }
   }));
- }catch(e){toast('خواندن فایل‌های ذخیره‌شده ناموفق بود: '+(e?.message||''))}
+ }catch(error){toast('خواندن فایل‌های ذخیره‌شده ناموفق بود: '+(error?.message||''))}
 }
 ACT.savedExports=()=>openSavedExports();
-const fname=(t,ext)=>(t+'_'+(UI.user?UI.user.name:'کاربر')+'_'+today().replace(/\//g,'-')).replace(/[\\\/:*?"<>|]/g,'-')+'.'+ext;
+const fname=(t,ext)=>{const d=new Date(),parts=today().split('/').map(Number),date=fa(parts[2])+' '+MONTHS[parts[1]-1]+' '+fa(parts[0]),time=[d.getHours(),d.getMinutes(),d.getSeconds()].map(n=>fa(p2(n))).join('-');return(t+'_'+(UI.user?UI.user.name:'کاربر')+'_'+date+'_ساعت-'+time).replace(/[\\/:*?"<>|]/g,'-')+'.'+ext};
 function secsRows(secs){const rows=[];secs.forEach(s=>{if(s.title)rows.push([s.title]);rows.push(s.cols);s.rows.forEach(r=>rows.push(r.map(v=>typeof v==='number'?v:String(v==null?'':v))));if(s.foot)rows.push(s.foot);rows.push([])});return rows}
 function pdfPages(secs,meta,land){const W=land?1754:1240,H=land?1240:1754,M=50,pages=[],FONT='Tahoma,"Noto Naskh Arabic","Noto Sans Arabic",Arial,sans-serif';let cv,ctx,y;
  const np=()=>{cv=document.createElement('canvas');cv.width=W;cv.height=H;ctx=cv.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.direction='rtl';ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillStyle='#10264a';ctx.font='bold 28px '+FONT;ctx.fillText(S.company,W-M,48);ctx.font='18px '+FONT;ctx.fillStyle='#555';ctx.fillText(meta,W-M,80);ctx.strokeStyle='#c9a24b';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(M,98);ctx.lineTo(W-M,98);ctx.stroke();y=116;pages.push(cv)};
@@ -966,17 +991,17 @@ ACT.rg=p=>{UI.rg=p;UI.rep=null;UI.rf={};render()};ACT.rp=p=>{UI.rep=p;render()};
 const hasClosed=()=>Object.values(S.days).some(d=>d.closed);
 function excelImportTemplatePanel(inputKind){
  const t=templateSpec(inputKind);
- return '<div class="card"><div class="ftitle">ورود ردیفی Excel — '+esc(t.n)+'</div><div class="row"><button class="btn" data-a="tpl" data-p="'+inputKind+'">📄 قالب ورود</button><button class="btn" data-a="tplCopy" data-p="'+inputKind+'">📋 کپی قالب</button><button class="btn" data-a="pasteImp" data-p="'+inputKind+'">📥 چسباندن</button><label class="btn filebtn">📂 انتخاب فایل<input type="file" data-imp="'+inputKind+'" accept=".xlsx,.xls,.csv,.tsv,.txt,*/*"></label></div><div class="hint">این قالب برای ثبت عملیات جدید است؛ برای بازگردانی سندهای موجود از خروجی کامل بخش استفاده کنید.</div></div>';
+ return '<div class="card"><div class="ftitle">ورود ردیفی Excel — '+esc(t.n)+'</div><div class="row"><button class="btn" data-a="tpl" data-p="'+inputKind+'">📄 قالب ورود</button><button class="btn" data-a="tplCopy" data-p="'+inputKind+'">📋 کپی قالب</button><button class="btn" data-a="pasteImp" data-p="'+inputKind+'">📥 چسباندن</button><label class="btn filebtn">📂 انتخاب فایل<input type="file" data-imp="'+inputKind+'" accept=".xlsx,.csv,.tsv,.txt,*/*"></label></div><div class="hint">این قالب برای ثبت عملیات جدید است؛ برای بازگردانی سندهای موجود از خروجی کامل بخش استفاده کنید.</div></div>';
 }
 function excelTransferPanel(inputKind,exportKind){
  const t=templateSpec(inputKind),out=exportKind||inputKind;
- return '<div class="card"><div class="ftitle">ورود و خروج Excel — '+esc(t.n)+'</div><div class="row"><button class="btn" data-a="exportBaseData" data-p="'+out+'">⬇️ خروجی اطلاعات موجود</button><button class="btn" data-a="tpl" data-p="'+inputKind+'">📄 قالب ورود</button><button class="btn" data-a="tplCopy" data-p="'+inputKind+'">📋 کپی قالب</button><button class="btn" data-a="pasteImp" data-p="'+inputKind+'">📥 چسباندن</button><label class="btn filebtn">📂 ورود فایل Excel<input type="file" data-imp="'+inputKind+'" accept=".xlsx,.xls,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/octet-stream,*/*"></label></div><div class="hint">سرستون‌ها شناسایی و در صورت جابه‌جایی مرتب می‌شوند؛ ثبت نهایی از کنترل‌های عملیاتی و حسابداری عبور می‌کند.</div></div>';
+ return '<div class="card"><div class="ftitle">ورود و خروج Excel — '+esc(t.n)+'</div><div class="row"><button class="btn" data-a="exportBaseData" data-p="'+out+'">⬇️ خروجی اطلاعات موجود</button><button class="btn" data-a="tpl" data-p="'+inputKind+'">📄 قالب ورود</button><button class="btn" data-a="tplCopy" data-p="'+inputKind+'">📋 کپی قالب</button><button class="btn" data-a="pasteImp" data-p="'+inputKind+'">📥 چسباندن</button><label class="btn filebtn">📂 ورود فایل Excel<input type="file" data-imp="'+inputKind+'" accept=".xlsx,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,application/octet-stream,*/*"></label></div><div class="hint">سرستون‌ها شناسایی و در صورت جابه‌جایی مرتب می‌شوند؛ ثبت نهایی از کنترل‌های عملیاتی و حسابداری عبور می‌کند.</div></div>';
 }
 function warehousePage(){return excelTransferPanel('warehouses')+`<div class="card"><div class="ftitle">تعریف و مدیریت انبارها</div><div class="hint">هر انبار حساب معین مستقل موجودی کالا دارد. انبار دارای سابقه حذف نمی‌شود تا گردش و اسناد تاریخی مخدوش نشود.</div>${warehouseList().map(w=>`<div class="orow"><div><b>${esc(w.name)}</b><div class="hint">شناسه: ${esc(w.id)} — حساب موجودی: ${fa(w.acc)}</div></div><div class="acts"><button class="btn sm" data-a="editWarehouse" data-p="${esc(w.id)}">ویرایش نام</button></div></div>`).join('')}</div><div class="card"><div class="ftitle">افزودن انبار جدید</div><label>نام انبار</label><input id="wh_name" placeholder="مثلاً انبار مواد اولیه"><button class="btn pri wide" data-a="saveWarehouse">ثبت انبار و ایجاد حساب موجودی</button></div>`}
 ACT.editWarehouse=id=>{if(!can('wh'))return toast('دسترسی انبارداری ندارید');const w=warehouseList().find(x=>x.id===String(id));if(!w)return;const n=prompt('نام جدید انبار',w.name);if(n===null)return;if(!n.trim())return toast('نام انبار الزامی است');if(commit(c=>{const x=c.warehouses.find(z=>String(z.id)===String(id));x.name=n.trim();const a=c.accounts.find(a=>a.code===x.acc);if(a)a.name='موجودی کالا – '+x.name},'ویرایش','انبار',id,w.name,n.trim())){index(B);render();toast('نام انبار اصلاح شد')}};
 ACT.saveWarehouse=()=>{if(!can('wh'))return toast('دسترسی انبارداری ندارید');const name=($('#wh_name')?.value||'').trim();if(!name)return toast('نام انبار را وارد کنید');if(warehouseList().some(w=>w.name.trim()===name))return toast('این نام انبار تکراری است');if(commit(c=>{const used=warehouseList(c).map(w=>+w.acc||0);let code=Math.max(1602,...used)+1;while(c.accounts.some(a=>a.code===String(code)))code++;const id=mkid(c,'w');c.warehouses=c.warehouses||[];c.warehouses.push({id,name,acc:String(code)});c.accounts.push({code:String(code),name:'موجودی کالا – '+name})},'ایجاد','انبار',name,'','انبار جدید')){index(B);render();toast('انبار و حساب معین موجودی آن ایجاد شد')}};
 function basePage(){const t=UI.base;let h=chips([['parties','👥 اشخاص'],['goods','👕 کالاها'],['warehouses','🏬 تعریف انبارها'],['stock','📊 موجودی انبارها'],['sources','🏦 منابع مالی'],['coa','📚 کدینگ حساب‌ها']].filter(([k])=>k!=='warehouses'||can('wh')),t,'bt');
- const tplBar=k=>`<div class="card"><div class="row"><button class="btn" data-a="exportBaseData" data-p="${k}">⬇️ دانلود اطلاعات موجود</button><button class="btn" data-a="tpl" data-p="${k}">📄 دریافت قالب ورود</button><button class="btn" data-a="tplCopy" data-p="${k}">📋 کپی قالب</button><button class="btn" data-a="pasteImp" data-p="${k}">📥 چسباندن از اکسل</button><label class="btn filebtn">📂 ورود از اکسل (از حافظهٔ گوشی)<input type="file" data-imp="${k}" accept=".xlsx,.xls,.csv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/octet-stream,*/*"></label></div><div class="hint">اگر دکمهٔ دریافت قالب یا ورود فایل در محیط شما (نمایش داخل چت یا برخی APKها) پاسخ نمی‌دهد: «کپی قالب» را بزنید و در اکسل بچسبانید؛ سپس ستون‌های پر شده را کپی کنید و «چسباندن از اکسل» را بزنید.${window.self!==window.top?'<br><b>این صفحه داخل قاب است؛ دانلود و انتخاب فایل در قاب‌ها معمولاً مسدود است. فایل را در Chrome باز کنید.</b>':''}</div></div>`;
+ const tplBar=k=>`<div class="card"><div class="row"><button class="btn" data-a="exportBaseData" data-p="${k}">⬇️ دانلود اطلاعات موجود</button><button class="btn" data-a="tpl" data-p="${k}">📄 دریافت قالب ورود</button><button class="btn" data-a="tplCopy" data-p="${k}">📋 کپی قالب</button><button class="btn" data-a="pasteImp" data-p="${k}">📥 چسباندن از اکسل</button><label class="btn filebtn">📂 ورود از اکسل (از حافظهٔ گوشی)<input type="file" data-imp="${k}" accept=".xlsx,.csv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,application/octet-stream,*/*"></label></div><div class="hint">اگر دکمهٔ دریافت قالب یا ورود فایل در محیط شما (نمایش داخل چت یا برخی APKها) پاسخ نمی‌دهد: «کپی قالب» را بزنید و در اکسل بچسبانید؛ سپس ستون‌های پر شده را کپی کنید و «چسباندن از اکسل» را بزنید.${window.self!==window.top?'<br><b>این صفحه داخل قاب است؛ دانلود و انتخاب فایل در قاب‌ها معمولاً مسدود است. فایل را در Chrome باز کنید.</b>':''}</div></div>`;
  if(t==='parties'){const q=UI.q||'';h+=tplBar('parties')+`<div class="card"><input placeholder="جستجوی نام یا کد" data-a="" id="qBox" value="${esc(q)}" oninput="UI.q=this.value;partyList()"><div id="plist">${partyListHtml()}</div></div>`+partyForm()}
  else if(t==='goods')h+=tplBar('goods')+`<div class="card" id="glist">${goodListHtml()}</div>`+goodForm();
  else if(t==='warehouses')h+=can('wh')?warehousePage():'<div class="card warn">دسترسی مدیریت انبار ندارید.</div>';
@@ -1082,7 +1107,7 @@ function productionPage(){
  const transferKind=UI.prodTab==='bom'?'boms':UI.prodTab==='orders'?'productionOrders':'';
  if(transferKind){
   const transferTitle=transferKind==='boms'?'فرمول‌های ساخت':'دستورهای ساخت و اسناد مرتبط';
-  h+=`<div class="card"><div class="ftitle">ورود و خروج اطلاعات — ${transferTitle}</div><div class="row"><button class="btn" data-a="exportBaseData" data-p="${transferKind}">⬇️ دانلود اطلاعات موجود</button><button class="btn" data-a="tpl" data-p="${transferKind}">📄 دانلود قالب استاندارد</button><button class="btn" data-a="tplCopy" data-p="${transferKind}">📋 کپی قالب</button><button class="btn" data-a="pasteImp" data-p="${transferKind}">📥 چسباندن از اکسل</button><label class="btn filebtn">📂 ورود فایل Excel<input type="file" data-imp="${transferKind}" accept=".xlsx,.xls,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/octet-stream,*/*"></label></div><div class="hint">ترتیب ستون‌ها با عنوان آن‌ها تشخیص داده می‌شود. برای فرمول ساخت، هر ماده اولیه یک ردیف مستقل است. برای دستور ساخت، خروجی اطلاعات موجود شامل JSON کامل دستور و اسناد مصرف مواد و رسید محصول است؛ برای بازگردانی کامل، همین فایل خروجی را بدون حذف ستون‌های JSON وارد کنید.</div></div>`;
+  h+=`<div class="card"><div class="ftitle">ورود و خروج اطلاعات — ${transferTitle}</div><div class="row"><button class="btn" data-a="exportBaseData" data-p="${transferKind}">⬇️ دانلود اطلاعات موجود</button><button class="btn" data-a="tpl" data-p="${transferKind}">📄 دانلود قالب استاندارد</button><button class="btn" data-a="tplCopy" data-p="${transferKind}">📋 کپی قالب</button><button class="btn" data-a="pasteImp" data-p="${transferKind}">📥 چسباندن از اکسل</button><label class="btn filebtn">📂 ورود فایل Excel<input type="file" data-imp="${transferKind}" accept=".xlsx,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,application/octet-stream,*/*"></label></div><div class="hint">ترتیب ستون‌ها با عنوان آن‌ها تشخیص داده می‌شود. برای فرمول ساخت، هر ماده اولیه یک ردیف مستقل است. برای دستور ساخت، خروجی اطلاعات موجود شامل JSON کامل دستور و اسناد مصرف مواد و رسید محصول است؛ برای بازگردانی کامل، همین فایل خروجی را بدون حذف ستون‌های JSON وارد کنید.</div></div>`;
  }
  const mats=S.goods.filter(g=>g.kind==='material'),products=S.goods.filter(g=>g.kind==='finished');
  if(UI.prodTab==='bom'){
@@ -1208,7 +1233,7 @@ function templateAliases(k,spec){
 }
 ACT.tpl=k=>{const t=templateSpec(k);saveBlob(fname('قالب اکسل '+t.n,'xlsx'),xlsxBlob([t.h,t.s],t.n));};
 
-async function readTable(file){const n=(file.name||'').toLowerCase();if(/\.(csv|tsv|txt)$/.test(n))return parseTable(await file.text());return await readXlsx(await file.arrayBuffer())}
+async function readTable(file){if(!file)throw new Error('فایلی انتخاب نشده است');const n=(file.name||'').toLowerCase();if(/\.xls$/.test(n)&&!/\.xlsx$/.test(n))throw new Error('فرمت XLS قدیمی پشتیبانی نمی‌شود؛ فایل را در Excel با فرمت XLSX ذخیره کنید.');if(/\.(csv|tsv|txt)$/.test(n)||/text\/(csv|plain)/i.test(file.type||''))return parseTable(await file.text());return await readXlsx(await file.arrayBuffer())}
 function importOperationalScope(kind,inputRows){
  if(kind==='cardex')return 'کارتکس گزارش محاسباتی است و نباید به‌عنوان سند موجودی وارد شود؛ برای بازیابی موجودی از خروجی رسید، حواله، انتقال یا خروجی یکپارچه استفاده کنید.';
  const mapped=MRKDataTools.mapImportRows(inputRows,DATA_EXCEL_HEADERS,DATA_EXCEL_ALIASES);
@@ -1248,17 +1273,18 @@ function runImport(k,rows){
  toast((mapped.mode==='header-mapped'?'ستون‌ها به‌صورت خودکار تشخیص داده شدند؛ ':'')+'ورود '+fa(body.length)+' ردیف انجام شد.'+(missing.length?' ستون‌های بدون تطبیق: '+missing.slice(0,3).join('، '):''));
  return '';
 }
-async function onFile(file){
+async function onFile(file,kind){
  if(!file)return;
+ const importKind=kind||UI.impKind;
  try{
   const rows=await readTable(file);
-  let e;
-  if(UI.impKind==='data'){
-   const kind=$('#dataImportKind')?.value||UI.dataImportKind||'unified';
-   e=kind==='unified'?runUnifiedImport(rows):runImport(kind,rows);
-  }else e=runImport(UI.impKind,rows);
-  if(e)toast(e);
- }catch(x){toast('خواندن یا ورود فایل ناموفق بود ('+x.message+'). داده‌های فعلی تغییر نکردند.')}
+  let error;
+  if(importKind==='data'){
+   const selectedKind=$('#dataImportKind')?.value||UI.dataImportKind||'unified';
+   error=selectedKind==='unified'?runUnifiedImport(rows):runImport(selectedKind,rows);
+  }else error=runImport(importKind,rows);
+  if(error)toast(error);
+ }catch(error){toast('خواندن یا ورود فایل ناموفق بود ('+(error?.message||'خطای نامشخص')+'). داده‌های فعلی تغییر نکردند.')}
 }
 
 const DATA_EXCEL_HEADERS=['نوع رکورد','شناسه','تاریخ','نوع عملیات','کد','نام / شرح','وضعیت','مقدار','JSON کامل رکورد'];
@@ -1422,12 +1448,12 @@ function dataCenterPage(){
  ];
  const kinds=Object.keys(TPL).filter(k=>!['cardex','chequeEntries','warehouseOpsInput'].includes(k));
  return '<div class="card"><div class="ftitle">مرکز جامع ورود و خروج اطلاعات Excel</div><div class="hint">خروجی یکپارچه شامل اطلاعات پایه، اسناد روزانه، فاکتورها، دریافت و پرداخت، چک‌ها، رسید و حواله کالا، انتقال انبار، BOM، دستورهای ساخت، دستمزد، روزهای بسته‌شده و سوابق آرشیوی است. برای بازیابی کامل، فایل یکپارچه MR یا پشتیبان JSON را نگه دارید.</div><div class="row mt"><button class="btn pri" data-a="dataExcelExport">⬇️ خروجی Excel یکپارچه تمام اطلاعات</button><button class="btn" data-a="bakDl">💾 پشتیبان کامل JSON</button><button class="btn" data-a="savedExports">🗂️ فایل‌های خروجی ذخیره‌شده</button></div><div class="hint">نام فایل خروجی هنگام دریافت قابل تعیین است. در فایل‌های عملیاتی، JSON کامل هر سند برای حفظ اقلام، انبارها، پرداخت‌ها و ارتباطات اصلی نگهداری می‌شود.</div></div>'+
- '<div class="card"><div class="ftitle">ورود Excel / Google Sheets</div><label>نوع اطلاعات فایل ورودی</label><select id="dataImportKind" class="wide">'+sel(options,UI.dataImportKind||'unified')+'</select><div class="row mt"><button class="btn pri" data-a="dataPaste">📋 چسباندن از اکسل</button><label class="btn filebtn">📂 انتخاب فایل Excel<input type="file" data-imp="data" accept=".xlsx,.xls,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/octet-stream,*/*"></label></div><div class="hint">ستون‌ها با سرعنوان فارسی و انگلیسی تشخیص داده می‌شوند و جابه‌جایی ستون‌ها اصلاح می‌شود. عملیات مالی و موجودی فقط پس از اعتبارسنجی اشخاص، کالاها، انبارها، شناسه‌ها، تاریخ و توازن حسابداری وارد می‌شوند. فایل کارتکس گزارش محاسباتی است و برای بازیابی باید اسناد مبنا وارد شوند.</div></div>'+
- '<div class="card"><div class="ftitle">قالب‌ها و خروجی اطلاعات واقعی هر بخش</div>'+kinds.map(k=>'<div class="orow"><div><b>'+esc(TPL[k].n)+'</b><div class="hint">'+esc(TPL[k].h.slice(0,4).join('، '))+'</div></div><div class="acts"><button class="btn sm" data-a="tpl" data-p="'+k+'">قالب ورود</button><button class="btn sm" data-a="exportBaseData" data-p="'+k+'">خروجی اطلاعات موجود</button><button class="btn sm" data-a="pasteImp" data-p="'+k+'">چسباندن</button><label class="btn sm filebtn">انتخاب فایل<input type="file" data-imp="'+k+'" accept=".xlsx,.xls,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/octet-stream,*/*"></label></div></div>').join('')+
+ '<div class="card"><div class="ftitle">ورود Excel / Google Sheets</div><label>نوع اطلاعات فایل ورودی</label><select id="dataImportKind" class="wide">'+sel(options,UI.dataImportKind||'unified')+'</select><div class="row mt"><button class="btn pri" data-a="dataPaste">📋 چسباندن از اکسل</button><label class="btn filebtn">📂 انتخاب فایل Excel<input type="file" data-imp="data" accept=".xlsx,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,application/octet-stream,*/*"></label></div><div class="hint">ستون‌ها با سرعنوان فارسی و انگلیسی تشخیص داده می‌شوند و جابه‌جایی ستون‌ها اصلاح می‌شود. عملیات مالی و موجودی فقط پس از اعتبارسنجی اشخاص، کالاها، انبارها، شناسه‌ها، تاریخ و توازن حسابداری وارد می‌شوند. فایل کارتکس گزارش محاسباتی است و برای بازیابی باید اسناد مبنا وارد شوند.</div></div>'+
+ '<div class="card"><div class="ftitle">قالب‌ها و خروجی اطلاعات واقعی هر بخش</div>'+kinds.map(k=>'<div class="orow"><div><b>'+esc(TPL[k].n)+'</b><div class="hint">'+esc(TPL[k].h.slice(0,4).join('، '))+'</div></div><div class="acts"><button class="btn sm" data-a="tpl" data-p="'+k+'">قالب ورود</button><button class="btn sm" data-a="exportBaseData" data-p="'+k+'">خروجی اطلاعات موجود</button><button class="btn sm" data-a="pasteImp" data-p="'+k+'">چسباندن</button><label class="btn sm filebtn">انتخاب فایل<input type="file" data-imp="'+k+'" accept=".xlsx,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,application/octet-stream,*/*"></label></div></div>').join('')+
  '<div class="orow"><div><b>کارتکس کالا با جست‌وجوی شخص و کالا</b><div class="hint">خروجی کارتکس بر اساس فیلترهای کالا، شخص، انبار و بازه تاریخ از بخش موجودی انبارها انجام می‌شود.</div></div><div class="acts"><button class="btn sm" data-a="bt" data-p="stock">رفتن به کارتکس انبار</button></div></div></div>'+
  '<div class="card"><div class="ftitle">قالب‌های ورود ردیفی عملیات</div>'+
- '<div class="orow"><div><b>'+esc(TPL.chequeEntries.n)+'</b><div class="hint">هر ردیف یک چک جدید؛ شناسه صیادی یکتا، شخص، سررسید و منبع پرداخت کنترل می‌شود.</div></div><div class="acts"><button class="btn sm" data-a="tpl" data-p="chequeEntries">قالب</button><button class="btn sm" data-a="pasteImp" data-p="chequeEntries">چسباندن</button><label class="btn sm filebtn">ورود فایل<input type="file" data-imp="chequeEntries" accept=".xlsx,.xls,.csv,.tsv,.txt,*/*"></label></div></div>'+
- '<div class="orow"><div><b>'+esc(TPL.warehouseOpsInput.n)+'</b><div class="hint">هر کالا یک ردیف؛ شناسه گروه سند برای تجمیع چند قلم در یک رسید/حواله/انتقال استفاده می‌شود.</div></div><div class="acts"><button class="btn sm" data-a="tpl" data-p="warehouseOpsInput">قالب</button><button class="btn sm" data-a="pasteImp" data-p="warehouseOpsInput">چسباندن</button><label class="btn sm filebtn">ورود فایل<input type="file" data-imp="warehouseOpsInput" accept=".xlsx,.xls,.csv,.tsv,.txt,*/*"></label></div></div></div>'+
+ '<div class="orow"><div><b>'+esc(TPL.chequeEntries.n)+'</b><div class="hint">هر ردیف یک چک جدید؛ شناسه صیادی یکتا، شخص، سررسید و منبع پرداخت کنترل می‌شود.</div></div><div class="acts"><button class="btn sm" data-a="tpl" data-p="chequeEntries">قالب</button><button class="btn sm" data-a="pasteImp" data-p="chequeEntries">چسباندن</button><label class="btn sm filebtn">ورود فایل<input type="file" data-imp="chequeEntries" accept=".xlsx,.csv,.tsv,.txt,*/*"></label></div></div>'+
+ '<div class="orow"><div><b>'+esc(TPL.warehouseOpsInput.n)+'</b><div class="hint">هر کالا یک ردیف؛ شناسه گروه سند برای تجمیع چند قلم در یک رسید/حواله/انتقال استفاده می‌شود.</div></div><div class="acts"><button class="btn sm" data-a="tpl" data-p="warehouseOpsInput">قالب</button><button class="btn sm" data-a="pasteImp" data-p="warehouseOpsInput">چسباندن</button><label class="btn sm filebtn">ورود فایل<input type="file" data-imp="warehouseOpsInput" accept=".xlsx,.csv,.tsv,.txt,*/*"></label></div></div></div>'+
  '<div class="card"><div class="ftitle">قواعد ایمنی ورود گروهی</div><ul class="hint"><li>ابتدا فایل را در محیط آزمایشی وارد و گزارش‌های مربوط را کنترل کنید.</li><li>مبالغ و تعدادها باید عددی و تاریخ‌ها در سال مالی فعال باشند.</li><li>فاکتور تکراری، شناسه صیادی تکراری و عملیات روز بسته‌شده دوباره ثبت نمی‌شوند.</li><li>ورود رسید، حواله و انتقال از مسیر موتور موجودی و سند دوبل انجام می‌شود؛ گزارش کارتکس مستقیماً به موجودی تبدیل نمی‌شود.</li><li>برای بازگردانی کامل سال‌های قبل و تمام تنظیمات، پشتیبان JSON مسیر مطمئن‌تر است.</li></ul></div>';
 }
 function exportExcelScope(scope){
@@ -1758,7 +1784,7 @@ function settingsPage(){const t=UI.st||'acct';const tabs=[['acct','🧾 حساب
  else if(t==='roles')h+=`<div class="card"><div class="ftitle">نقش‌ها و سطوح دسترسی</div><p class="hint">نقش پایه، عضویت شرکت و مجوزهای کاربر از پایگاه مرکزی خوانده می‌شوند. برای جلوگیری از ایجاد دسترسی محلیِ غیرقابل اتکا، تغییر نقش فقط از بخش «کاربران» و از طریق سرویس مدیریتی احراز هویت‌شده انجام می‌شود.</p><div class="trow"><span>مدیر سیستم / مدیر عامل</span><b>دسترسی مدیریتی</b></div><div class="trow"><span>مدیر مالی / حسابدار</span><b>عملیات مالی بر اساس نقش</b></div><div class="trow"><span>صندوقدار / فروش / خرید / انبار</span><b>دسترسی عملیاتی محدود</b></div><div class="trow"><span>حسابرس / ناظر</span><b>فقط مشاهده</b></div></div>`
  else if(t==='guest')h+=`<div class="card"><div class="ftitle">محیط مهمان و نمایش عمومی</div><div class="trow"><span>وضعیت این بسته اندروید</span><b>بدون QR Code</b></div><div class="trow"><span>ورود مهمان در نسخه وب</span><b>نشست تصادفی و کوتاه‌عمر؛ بدون رمز ثابت</b></div><div class="hint">این بسته اندروید هیچ تصویر یا کد QR ندارد. محیط مهمان وب با هر شروع، یک توکن تصادفی مستقل و کوتاه‌عمر می‌سازد. عملیات حسابداری مهمان فقط در حافظه موقت همان نشست نگهداری می‌شود و به پایگاه داده یا شرکت اصلی ارسال نمی‌شود. در سرور فقط ایجاد نشست و خروج برای کنترل امنیت ثبت می‌شود.</div><button class="btn pri wide mt" data-a="openGuestDemo">بازکردن صفحه عمومی مهمان</button><button class="btn wide mt" data-a="copyGuestDemo">کپی نشانی عمومی</button></div>`;
  else if(t==='bak')h+=`<div class="card"><div class="ftitle">پشتیبان‌گیری</div><div class="row"><button class="btn pri" data-a="bakDl">💾 دریافت فایل پشتیبان</button><button class="btn" data-a="bakMail">✉️ ارسال پشتیبان به ایمیل</button><label class="btn filebtn">♻️ بازیابی از فایل<input type="file" data-restore accept=".json,application/json,text/plain,application/octet-stream,*/*"></label></div><label>نشانی ایمیل برای پشتیبان و خروجی‌ها</label><input id="s_mail" dir="ltr" value="${esc(S.email||'') }" onchange="S.email=this.value.trim();save()"><div class="hint">در گوشی با «اشتراک‌گذاری» فایل مستقیم به برنامهٔ ایمیل پیوست می‌شود؛ در غیر این صورت فایل دانلود و پنجرهٔ ایمیل باز می‌شود.</div></div><div class="card"><div class="ftitle">همگام‌سازی ابری امن</div><div class="hint">اتصال از طریق حساب کاربری سازمانی و سطح دسترسی پایگاه داده انجام می‌شود؛ کلید مشترک در برنامه ذخیره نشده است.</div><div class="trow"><span>شرکت فعال</span><b>${esc(S.company||'—')}</b></div><div class="trow"><span>شناسه شرکت</span><b dir="ltr">${esc(UI.companyId||'—')}</b></div><div class="hint" id="syncMsg">${esc(SYNC.msg||'برای ذخیره و دریافت تغییرات از دکمه همگام‌سازی استفاده کنید.')}</div><button class="btn pri mt" data-a="syncSave">🔄 همگام‌سازی اکنون</button><div class="hint">تغییرات پس از ثبت، با نشست احراز هویت‌شده ارسال و نسخه سرور با کنترل تداخل بررسی می‌شود.</div></div>`;
- else h+=`<div class="card"><div class="ftitle">کنترل‌ها</div><label class="chk"><input type="checkbox" ${S.autoPdf!==false?'checked':''} data-a="togPdf"> پس از بستن روز، PDF دفتر روزنامه و دفتر کل همان روز خودکار ذخیره شود</label><div class="trow"><span>شناسهٔ این دستگاه</span><b dir="ltr">${esc(S.dev)}</b></div><div class="trow"><span>آخرین پشتیبان خودکار (بستن روز)</span><b>${S.lastBackup?fa(S.lastBackup):'—'}</b></div><div class="trow"><span>نسخهٔ برنامه</span><b>${fa('2.9.0')}</b></div><div class="hint">توازن سند، قفل روز بسته، حذف منطقی، مسیر حسابرسی و شماره‌گذاری یکتا در هستهٔ برنامه اجباری هستند.</div></div>`;
+ else h+=`<div class="card"><div class="ftitle">کنترل‌ها</div><label class="chk"><input type="checkbox" ${S.autoPdf!==false?'checked':''} data-a="togPdf"> پس از بستن روز، PDF دفتر روزنامه و دفتر کل همان روز خودکار ذخیره شود</label><div class="trow"><span>شناسهٔ این دستگاه</span><b dir="ltr">${esc(S.dev)}</b></div><div class="trow"><span>آخرین پشتیبان خودکار (بستن روز)</span><b>${S.lastBackup?fa(S.lastBackup):'—'}</b></div><div class="trow"><span>نسخهٔ برنامه</span><b>${fa('2.9.1')}</b></div><div class="hint">توازن سند، قفل روز بسته، حذف منطقی، مسیر حسابرسی و شماره‌گذاری یکتا در هستهٔ برنامه اجباری هستند.</div></div>`;
  return h}
 
 function persistSettings(section,patch,label){const before=clone(settingsOf());S.settings=settingsOf();S.settings[section]={...S.settings[section],...patch};S.setMt=Date.now();audit('تغییر تنظیمات',label||section,section,before[section],S.settings[section]);save();B=index(build(S));render();toast('تنظیمات ذخیره شد')}

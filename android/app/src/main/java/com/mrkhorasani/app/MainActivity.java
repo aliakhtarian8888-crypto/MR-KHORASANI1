@@ -2,6 +2,7 @@ package com.mrkhorasani.app;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
+import android.content.ClipData;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -17,7 +18,15 @@ import androidx.annotation.Nullable;
 import androidx.webkit.WebViewAssetLoader;
 import androidx.webkit.WebViewClientCompat;
 
+import org.json.JSONObject;
+
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+
 import android.util.Base64;
 
 public final class MainActivity extends Activity {
@@ -27,6 +36,8 @@ public final class MainActivity extends Activity {
 
     private WebView webView;
     private byte[] pendingExportBytes;
+    private String pendingExportRequestId;
+    private String pendingExportFileName;
     private ValueCallback<Uri[]> pendingFileChooser;
 
     @Override
@@ -81,10 +92,18 @@ public final class MainActivity extends Activity {
                                              FileChooserParams params) {
                 if (pendingFileChooser != null) pendingFileChooser.onReceiveValue(null);
                 pendingFileChooser = callback;
+
                 Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                 intent.addCategory(Intent.CATEGORY_OPENABLE);
                 intent.setType("*/*");
-                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                String[] acceptedMimeTypes = acceptedMimeTypes(params == null ? null : params.getAcceptTypes());
+                if (acceptedMimeTypes.length > 0) {
+                    intent.putExtra(Intent.EXTRA_MIME_TYPES, acceptedMimeTypes);
+                }
+                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE,
+                        params != null && params.getMode() == FileChooserParams.MODE_OPEN_MULTIPLE);
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
                 try {
                     startActivityForResult(intent, REQUEST_OPEN_DOCUMENT);
                     return true;
@@ -101,9 +120,36 @@ public final class MainActivity extends Activity {
         webView.loadUrl("https://" + APP_ASSET_HOST + "/assets/index.html");
     }
 
+    private String[] acceptedMimeTypes(@Nullable String[] acceptedTypes) {
+        Set<String> types = new LinkedHashSet<>();
+        if (acceptedTypes != null) {
+            for (String raw : acceptedTypes) {
+                if (raw == null) continue;
+                for (String item : raw.split(",")) {
+                    String type = item.trim().toLowerCase(Locale.ROOT);
+                    if (type.startsWith(".")) {
+                        if (type.equals(".xlsx")) types.add("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+                        else if (type.equals(".csv")) types.add("text/csv");
+                        else if (type.equals(".tsv")) types.add("text/tab-separated-values");
+                        else if (type.equals(".txt")) types.add("text/plain");
+                    } else if (type.contains("/") && !type.equals("*/*")) {
+                        types.add(type);
+                    }
+                }
+            }
+        }
+        if (types.isEmpty()) {
+            types.add("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            types.add("text/csv");
+            types.add("text/tab-separated-values");
+            types.add("text/plain");
+        }
+        return types.toArray(new String[0]);
+    }
+
     private void openExternal(Uri uri) {
         if (uri == null || uri.getScheme() == null) return;
-        String scheme = uri.getScheme().toLowerCase();
+        String scheme = uri.getScheme().toLowerCase(Locale.ROOT);
         if (!scheme.equals("https") && !scheme.equals("mailto") && !scheme.equals("tel")) return;
         try {
             startActivity(new Intent(Intent.ACTION_VIEW, uri));
@@ -114,32 +160,83 @@ public final class MainActivity extends Activity {
 
     private final class NativeExportBridge {
         @JavascriptInterface
-        public void saveFile(String fileName, String mimeType, String base64Data) {
+        public void saveFile(String requestId, String fileName, String mimeType, String base64Data) {
+            if (pendingExportBytes != null) {
+                notifyNativeFileResult(requestId, false, "یک ذخیره‌سازی دیگر هنوز در حال انجام است.");
+                return;
+            }
             try {
                 pendingExportBytes = Base64.decode(base64Data, Base64.DEFAULT);
+                pendingExportRequestId = requestId;
+                pendingExportFileName = safeFileName(fileName);
                 runOnUiThread(() -> {
                     Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
                     intent.addCategory(Intent.CATEGORY_OPENABLE);
                     intent.setType(mimeType == null || mimeType.isEmpty()
                             ? "application/octet-stream" : mimeType);
-                    intent.putExtra(Intent.EXTRA_TITLE, safeFileName(fileName));
+                    intent.putExtra(Intent.EXTRA_TITLE, pendingExportFileName);
+                    intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                            | Intent.FLAG_GRANT_READ_URI_PERMISSION);
                     try {
                         startActivityForResult(intent, REQUEST_CREATE_DOCUMENT);
                     } catch (ActivityNotFoundException error) {
-                        pendingExportBytes = null;
-                        Toast.makeText(MainActivity.this, "ذخیره‌ساز فایل در دسترس نیست", Toast.LENGTH_LONG).show();
+                        finishPendingExport(false, "ذخیره‌ساز فایل در دسترس نیست.");
                     }
                 });
             } catch (IllegalArgumentException error) {
-                runOnUiThread(() -> Toast.makeText(MainActivity.this,
-                        "ساخت فایل خروجی ناموفق بود", Toast.LENGTH_LONG).show());
+                pendingExportBytes = null;
+                pendingExportRequestId = null;
+                pendingExportFileName = null;
+                notifyNativeFileResult(requestId, false, "داده فایل خروجی قابل خواندن نیست.");
             }
         }
     }
 
+    private void notifyNativeFileResult(String requestId, boolean success, String message) {
+        if (webView == null || requestId == null) return;
+        String script = "if(window.MRKNativeFileResult){window.MRKNativeFileResult("
+                + JSONObject.quote(requestId) + "," + success + ","
+                + JSONObject.quote(message == null ? "" : message) + ");}";
+        webView.post(() -> webView.evaluateJavascript(script, null));
+    }
+
+    private void finishPendingExport(boolean success, String message) {
+        String requestId = pendingExportRequestId;
+        pendingExportBytes = null;
+        pendingExportRequestId = null;
+        pendingExportFileName = null;
+        notifyNativeFileResult(requestId, success, message);
+    }
+
     private String safeFileName(String value) {
-        if (value == null || value.trim().isEmpty()) return "MR-KHORASANI-export";
-        return value.replaceAll("[\\\\/:*?\"<>|]", "_");
+        if (value == null || value.trim().isEmpty()) return "MR-KHORASANI-export.xlsx";
+        String cleaned = value.replaceAll("[\\\\/:*?\"<>|]", "-")
+                .replaceAll("[\\p{Cntrl}]", "")
+                .trim();
+        return cleaned.isEmpty() ? "MR-KHORASANI-export.xlsx" : cleaned;
+    }
+
+    private Uri[] selectedUris(@Nullable Intent data) {
+        if (data == null) return null;
+        List<Uri> selected = new ArrayList<>();
+        ClipData clip = data.getClipData();
+        if (clip != null) {
+            for (int i = 0; i < clip.getItemCount(); i++) {
+                Uri uri = clip.getItemAt(i).getUri();
+                if (uri != null) selected.add(uri);
+            }
+        } else if (data.getData() != null) {
+            selected.add(data.getData());
+        }
+        for (Uri uri : selected) {
+            try {
+                getContentResolver().takePersistableUriPermission(
+                        uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            } catch (SecurityException ignored) {
+                // Some document providers return temporary grants only; WebView can still read during this selection.
+            }
+        }
+        return selected.isEmpty() ? null : selected.toArray(new Uri[0]);
     }
 
     @Override
@@ -148,22 +245,21 @@ public final class MainActivity extends Activity {
         if (requestCode == REQUEST_CREATE_DOCUMENT) {
             if (resultCode == RESULT_OK && data != null && data.getData() != null
                     && pendingExportBytes != null) {
-                try (OutputStream output = getContentResolver().openOutputStream(data.getData())) {
+                try (OutputStream output = getContentResolver().openOutputStream(data.getData(), "w")) {
                     if (output == null) throw new IllegalStateException("Output stream unavailable");
                     output.write(pendingExportBytes);
                     output.flush();
-                    Toast.makeText(this, "فایل با موفقیت ذخیره شد", Toast.LENGTH_LONG).show();
+                    finishPendingExport(true, "فایل در مسیر انتخاب‌شده ذخیره شد.");
                 } catch (Exception error) {
-                    Toast.makeText(this, "ذخیره فایل ناموفق بود: " + error.getMessage(),
-                            Toast.LENGTH_LONG).show();
+                    finishPendingExport(false, "ذخیره فایل ناموفق بود: " + error.getMessage());
                 }
+            } else {
+                finishPendingExport(false, "ذخیره فایل لغو شد یا مسیر معتبری انتخاب نشد.");
             }
-            pendingExportBytes = null;
             return;
         }
         if (requestCode == REQUEST_OPEN_DOCUMENT && pendingFileChooser != null) {
-            Uri[] result = resultCode == RESULT_OK && data != null && data.getData() != null
-                    ? new Uri[]{data.getData()} : null;
+            Uri[] result = resultCode == RESULT_OK ? selectedUris(data) : null;
             pendingFileChooser.onReceiveValue(result);
             pendingFileChooser = null;
         }
@@ -178,6 +274,9 @@ public final class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         if (pendingFileChooser != null) pendingFileChooser.onReceiveValue(null);
+        if (pendingExportRequestId != null) {
+            notifyNativeFileResult(pendingExportRequestId, false, "برنامه پیش از پایان ذخیره‌سازی بسته شد.");
+        }
         if (webView != null) {
             webView.removeJavascriptInterface("AndroidBridge");
             webView.destroy();
