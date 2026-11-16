@@ -41,3 +41,18 @@ test('GitHub workflow runs tests before building and uploads the debug APK', () 
   assert.ok(workflow.includes('upload-artifact'));
   assert.ok(workflow.indexOf('node --test') < workflow.indexOf('assembleDebug'));
 });
+
+test('native Android save bridge reports the real SAF write result to the web app', () => {
+  const activity = read('android/app/src/main/java/com/mrkhorasani/app/MainActivity.java');
+  assert.match(activity, /saveFile\(String requestId, String fileName, String mimeType, String base64Data\)/);
+  assert.match(activity, /MRKNativeFileResult/);
+  assert.match(activity, /ACTION_CREATE_DOCUMENT/);
+  assert.match(activity, /openOutputStream/);
+});
+
+test('native Android file picker honors accepted formats and grants document access', () => {
+  const activity = read('android/app/src/main/java/com/mrkhorasani/app/MainActivity.java');
+  assert.match(activity, /getAcceptTypes\(\)/);
+  assert.match(activity, /EXTRA_MIME_TYPES/);
+  assert.match(activity, /FLAG_GRANT_PERSISTABLE_URI_PERMISSION/);
+});
