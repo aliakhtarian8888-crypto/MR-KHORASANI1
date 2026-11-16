@@ -39,7 +39,7 @@
     query.delete('guest');
     const cleanSearch = query.toString();
     const cleanUrl = (locationLike && locationLike.pathname || '') + (cleanSearch ? '?' + cleanSearch : '');
-    return {isGuestEntry, token, cleanUrl};
+    return {isGuestEntry, token, cleanUrl, autoStartGuest: query.get('guest') === '1' || query.get('g') === '1'};
   }
 
   function sanitizeAuditDetail(value, depth = 0, parentKey = '') {

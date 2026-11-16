@@ -66,32 +66,32 @@ jobs:
           cp index.html guest-runtime.js supabase-config.js supabase-client.js warehouse-migration.js mrk-data-tools.js mrk-export-store.js manifest.webmanifest sw.js icon.svg icon-192.png apple-touch-icon.png brand-mr.svg .nojekyll README-WEB-PWA-FA.txt WEB-GUEST-PRIVACY-FA.txt /tmp/mrk-pwa/
           cp /tmp/mrk-pwa/* /tmp/mrk-zip-to-apk/
           cat > /tmp/mrk-zip-to-apk/ZIP-TO-APK-SETUP-FA.txt <<'EOF'
-          MR,KHORASANI 2.9.1 — ZIP TO APK
+          MR,KHORASANI 2.9.2 — ZIP TO APK
           این بسته مستقل وب‌اپ است و index.html در ریشه ZIP قرار دارد.
           همه فایل‌ها را در برنامه Zip to APK استخراج کنید و index.html را صفحه شروع قرار دهید.
           فایل‌های JS، پیکربندی Supabase، فونت/آیکون، manifest و service worker را حذف نکنید.
           برای نسخه نصب‌شدنی مستقل اندروید، از فایل APK ساخته‌شده در Artifact جداگانه استفاده کنید.
           EOF
-          (cd /tmp/mrk-pwa && zip -qr "$GITHUB_WORKSPACE/dist/MR-KHORASANI-WEB-PWA-v2.9.1.zip" .)
-          (cd /tmp/mrk-zip-to-apk && zip -qr "$GITHUB_WORKSPACE/dist/MR-KHORASANI-ZIP-TO-APK-v2.9.1.zip" .)
-          zip -qr dist/MR-KHORASANI-FULL-PROJECT-v2.9.1.zip . \
+          (cd /tmp/mrk-pwa && zip -qr "$GITHUB_WORKSPACE/dist/MR-KHORASANI-WEB-PWA-v2.9.2.zip" .)
+          (cd /tmp/mrk-zip-to-apk && zip -qr "$GITHUB_WORKSPACE/dist/MR-KHORASANI-ZIP-TO-APK-v2.9.2.zip" .)
+          zip -qr dist/MR-KHORASANI-FULL-PROJECT-v2.9.2.zip . \
             -x '.git/*' 'dist/*' 'android/.gradle/*' 'android/app/build/*' 'node_modules/*'
-          cp android/app/build/outputs/apk/debug/app-debug.apk dist/MR-KHORASANI-2.9.1-debug.apk
-          unzip -t dist/MR-KHORASANI-WEB-PWA-v2.9.1.zip
-          unzip -t dist/MR-KHORASANI-ZIP-TO-APK-v2.9.1.zip
-          unzip -t dist/MR-KHORASANI-FULL-PROJECT-v2.9.1.zip
-          test -s dist/MR-KHORASANI-2.9.1-debug.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist/MR-KHORASANI-2.9.2-debug.apk
+          unzip -t dist/MR-KHORASANI-WEB-PWA-v2.9.2.zip
+          unzip -t dist/MR-KHORASANI-ZIP-TO-APK-v2.9.2.zip
+          unzip -t dist/MR-KHORASANI-FULL-PROJECT-v2.9.2.zip
+          test -s dist/MR-KHORASANI-2.9.2-debug.apk
           ls -lh dist/
 
       - name: Upload release ZIP packages
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: MR-KHORASANI-2.9.1-Release-Packages
+          name: MR-KHORASANI-2.9.2-Release-Packages
           path: |
-            dist/MR-KHORASANI-WEB-PWA-v2.9.1.zip
-            dist/MR-KHORASANI-ZIP-TO-APK-v2.9.1.zip
-            dist/MR-KHORASANI-FULL-PROJECT-v2.9.1.zip
-            dist/MR-KHORASANI-2.9.1-debug.apk
+            dist/MR-KHORASANI-WEB-PWA-v2.9.2.zip
+            dist/MR-KHORASANI-ZIP-TO-APK-v2.9.2.zip
+            dist/MR-KHORASANI-FULL-PROJECT-v2.9.2.zip
+            dist/MR-KHORASANI-2.9.2-debug.apk
           if-no-files-found: error
           retention-days: 14
 
