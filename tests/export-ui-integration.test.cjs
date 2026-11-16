@@ -130,7 +130,7 @@ test('admin user report includes guest sessions and QR entry image is embedded i
  assert.match(source,/گزارش یکپارچه کاربران و مهمان‌ها/);
  assert.match(source,/data-a="loadGuestAudit"/);
  assert.match(source,/function guestQrSvg\(\)/);
- assert.match(source,/GUEST_QR_ROWS=/);
+ assert.match(source,/guest-entry-qr\\.png/);
  assert.match(source,/\?g=1/);
 });
 test('QR guest link automatically issues a guest session without a user password',()=>{
@@ -166,7 +166,7 @@ test('admin user settings show guest audit records alongside company users and c
  assert.match(source,/گزارش یکپارچه کاربران و مهمان‌ها/);
  assert.match(source,/data-a="loadGuestAudit"/);
  assert.match(source,/function guestQrSvg\(\)/);
- assert.match(source,/GUEST_QR_ROWS=/);
+ assert.match(source,/guest-entry-qr\\.png/);
  assert.match(source,/\?g=1/);
 });
 test('guest QR entry automatically starts a short-lived guest session without credentials',()=>{

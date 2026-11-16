@@ -29,6 +29,8 @@ jobs:
           python3 -m pip install --quiet "qrcode[pil]"
           python3 - <<'PY'
           import qrcode
+          from PIL import Image
+          Image.open("icon-192.png").convert("RGBA").resize((512, 512), Image.Resampling.LANCZOS).save("icon-512.png")
           entries = {
               "guest-entry-qr.png": "https://aliakhtarian8888-crypto.github.io/MR-KHORASANI1/?g=1",
               "android-install-qr.png": "https://aliakhtarian8888-crypto.github.io/MR-KHORASANI1/downloads/MR-KHORASANI-2.9.4.apk",
