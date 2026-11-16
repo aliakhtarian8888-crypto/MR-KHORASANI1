@@ -1860,7 +1860,9 @@ ACT.setUserPermission=async(userId,key,checked)=>{
  if(UI.guestMode||!UI.companyId){toast('تغییر مجوز واقعی فقط برای مدیر واردشده به شرکت مجاز است');render();return}
  const user=(UI.remoteUsers||[]).find(x=>x.user_id===userId);
  if(!user||!PERMS.some(x=>x[0]===key)){toast('کاربر یا مجوز انتخاب‌شده معتبر نیست');render();return}
- const current=Array.isArray(user.permission_keys)&&user.permission_keys.length?[...user.permission_keys]:(defRoles()[user.role_key||roleMap[String(user.role||'VIEWER').toUpperCase()]||'ناظر']||['rep','dash']);
+ const dbRoleMap={OWNER:'مدیر سیستم',ADMIN:'مدیر سیستم',FINANCE:'مدیر مالی',ACCOUNTANT:'حسابدار',SALES:'کاربر فروش',PURCHASE:'کاربر خرید',CASHIER:'صندوقدار',WAREHOUSE:'مدیر انبار',AUDITOR:'حسابرس',VIEWER:'ناظر'};
+ const effectiveRole=user.role_key||dbRoleMap[String(user.role||'VIEWER').toUpperCase()]||'ناظر';
+ const current=Array.isArray(user.permission_keys)&&user.permission_keys.length?[...user.permission_keys]:(defRoles()[effectiveRole]||['rep','dash']);
  const next=checked?[...current,key]:current.filter(x=>x!==key);
  if(!checked&&next.length===0)return toast('برای هر کاربر دست‌کم یک دسترسی باید باقی بماند');
  const input=document.querySelector('[data-user-id="'+CSS.escape(userId)+'"][data-user-perm="'+CSS.escape(key)+'"]');
