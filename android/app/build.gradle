@@ -7,8 +7,8 @@ android {
         applicationId 'com.mrkhorasani.app'
         minSdk 23
         targetSdk 35
-        versionCode 293
-        versionName '2.9.3'
+        versionCode 294
+        versionName '2.9.4'
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -23,7 +23,7 @@ tasks.register('syncWebAssets', Sync) {
     from('../../') {
         include '**/*'
         exclude '.git/**', '.github/**', 'tests/**', 'android/**'
-        exclude 'README*', '*.txt'
+        exclude 'README*', '*.txt', 'guest-entry-qr.png', 'android-install-qr.png', 'android-install.html'
     }
     into 'src/main/assets'
 }

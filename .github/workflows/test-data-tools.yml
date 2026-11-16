@@ -12,4 +12,22 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
+      - name: Prepare QR and PWA icon assets for packaging tests
+        run: |
+          python3 -m pip install --quiet "qrcode[pil]" cairosvg
+          python3 - <<'PY'
+          import qrcode
+          import cairosvg
+          cairosvg.svg2png(url="icon.svg", write_to="icon-192.png", output_width=192, output_height=192)
+          cairosvg.svg2png(url="icon.svg", write_to="icon-512.png", output_width=512, output_height=512)
+          entries = {
+              "guest-entry-qr.png": "https://aliakhtarian8888-crypto.github.io/MR-KHORASANI1/?g=1",
+              "android-install-qr.png": "https://aliakhtarian8888-crypto.github.io/MR-KHORASANI1/downloads/MR-KHORASANI-2.9.4.apk",
+          }
+          for filename, url in entries.items():
+              qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_H, box_size=12, border=4)
+              qr.add_data(url)
+              qr.make(fit=True)
+              qr.make_image(fill_color="#071a35", back_color="white").convert("RGB").save(filename)
+          PY
       - run: node --test tests/*.test.cjs

@@ -117,7 +117,7 @@ public final class MainActivity extends Activity {
         });
 
         webView.addJavascriptInterface(new NativeExportBridge(), "AndroidBridge");
-        webView.loadUrl("https://" + APP_ASSET_HOST + "/assets/index.html");
+        webView.loadUrl("https://" + APP_ASSET_HOST + "/assets/index.html?mrk_android=1");
     }
 
     private String[] acceptedMimeTypes(@Nullable String[] acceptedTypes) {
@@ -159,6 +159,9 @@ public final class MainActivity extends Activity {
     }
 
     private final class NativeExportBridge {
+        @JavascriptInterface
+        public boolean isNativeApp() { return true; }
+
         @JavascriptInterface
         public void saveFile(String requestId, String fileName, String mimeType, String base64Data) {
             if (pendingExportBytes != null) {
