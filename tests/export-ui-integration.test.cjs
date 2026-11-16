@@ -75,13 +75,26 @@ test('native export save waits for Android SAF completion instead of treating br
   assert.match(source, /nativeSaveRequests/);
 });
 
-test('automatic Excel names include the Persian month text and local save time', () => {
+test('automatic Excel names include the exact Persian date, section and device time', () => {
   const start = html.indexOf("<script>'use strict';");
   const source = html.slice(start + '<script>'.length, html.indexOf('</script>', start + '<script>'.length));
-  assert.match(source, /const fname=.*MONTHS\[/);
-  assert.match(source, /ساعت-/);
-  assert.match(source, /getHours\(\)/);
-  assert.match(source, /getMinutes\(\)/);
+  const declaration = source.match(/const fname=\(t,ext\)=>\{[\s\S]*?\};/);
+  assert.ok(declaration, 'filename generator must exist');
+  const fixedDate = class extends Date {
+    getHours() { return 21; }
+    getMinutes() { return 8; }
+    getSeconds() { return 5; }
+  };
+  const digits = '۰۱۲۳۴۵۶۷۸۹';
+  const fileName = vm.runInNewContext(declaration[0] + '; fname("اشخاص", "xlsx")', {
+    UI: { user: { name: 'علی' } },
+    today: () => '1405/08/25',
+    fa: value => String(value).replace(/\d/g, digit => digits[Number(digit)]),
+    MONTHS: ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'],
+    p2: value => String(value).padStart(2, '0'),
+    Date: fixedDate
+  });
+  assert.equal(fileName, 'اشخاص_علی_۲۵ آبان ۱۴۰۵_ساعت-۲۱-۰۸-۰۵.xlsx');
 });
 
 test('file import passes the selected section explicitly and explains unsupported legacy XLS files', () => {
