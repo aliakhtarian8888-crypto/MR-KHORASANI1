@@ -15,7 +15,7 @@
   ],
   "description": "سامانه حسابداری و مدیریت مالی MR, KHORASANI با محیط مهمان مستقل و قابل نصب",
   "version": "2.9.2",
-  "version_name": "2.9.2-native-file-transfer",
+  "version_name": "2.9.2-opening-balances-guest-qr",
   "id": "./",
   "display_override": [
     "standalone",
