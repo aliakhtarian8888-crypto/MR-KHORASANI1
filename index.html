@@ -1827,7 +1827,16 @@ function permissionMatrixPage(){
  const keysOf=u=>Array.isArray(u.permission_keys)&&u.permission_keys.length?u.permission_keys:(defRoles()[roleOf(u)]||['rep','dash']);
  if(!users.length)return `<div class="card"><div class="ftitle">ماتریس دسترسی کاربران</div><div class="hint">برای نمایش نام کاربران در ستون‌ها، فهرست کاربران شرکت را از سرور دریافت کنید.</div><button class="btn pri wide mt" data-a="loadUsers">دریافت کاربران از سرور و ساخت جدول دسترسی</button></div>`;
  const header=users.map(u=>`<th class="pm-user"><div>${esc(u.name||u.email||'کاربر')}</div><small>${esc(roleOf(u))}</small><small dir="ltr">${esc(u.email||'')}</small></th>`).join('');
- const body=grouped.map(([group,keys])=>`<tr class="pm-group"><th colspan="${users.length+1}">${esc(group)}</th></tr>`+keys.map(key=>`<tr><th class="pm-label">${esc(permName[key]||key)}</th>${users.map(u=>{const allowed=keysOf(u).includes(key),locked=UI.guestMode;return `<td class="pm-cell"><input type="checkbox" class="pm-check" data-user-perm="${esc(key)}" data-user-id="${esc(u.user_id)}" aria-label="${esc((u.name||u.email||'کاربر')+' - '+(permName[key]||key))}" ${allowed?'checked':''} ${locked?'disabled':''}></td>`}).join('')}</tr>`).join('');
+ const body=grouped.map(([group,keys])=>{
+  const rows=keys.map(key=>{
+   const cells=users.map(u=>{
+    const allowed=keysOf(u).includes(key),locked=UI.guestMode;
+    return `<td class="pm-cell"><input type="checkbox" class="pm-check" data-user-perm="${esc(key)}" data-user-id="${esc(u.user_id)}" aria-label="${esc((u.name||u.email||'کاربر')+' - '+(permName[key]||key))}" ${allowed?'checked':''} ${locked?'disabled':''}></td>`;
+   }).join('');
+   return `<tr><th class="pm-label">${esc(permName[key]||key)}</th>${cells}</tr>`;
+  }).join('');
+  return `<tr class="pm-group"><th colspan="${users.length+1}">${esc(group)}</th></tr>${rows}`;
+ }).join('');
  return `<div class="card"><div class="ftitle">ماتریس دسترسی کاربران</div><div class="hint">هر ستون یک کاربر و هر ردیف یک مجوز است. با تغییر هر تیک، فقط دسترسی همان کاربر در پروفایل شرکت ذخیره می‌شود؛ پیش‌فرض نقش‌های دیگر تغییر نمی‌کند. تغییرات از سرویس مدیریتی احراز هویت‌شده عبور می‌کند و در مسیر حسابرسی ثبت می‌شود.</div><div class="row mt"><button class="btn" data-a="loadUsers">↻ تازه‌سازی کاربران و مجوزها</button><span class="hint">${fa(users.length)} کاربر</span></div><div class="tw mt"><table class="tb pm-table"><thead><tr><th class="pm-label">بخش / کاربر</th>${header}</tr></thead><tbody>${body}</tbody></table></div><div class="hint mt">برای دیدن ستون‌های بعدی در موبایل، جدول را افقی پیمایش کنید. دسترسی مدیر اصلی شرکت طبق کنترل‌های امنیتی سرور محافظت می‌شود.</div>${UI.guestMode?'<div class="hint warn">در محیط مهمان، جدول فقط نمایشی است و تغییر مجوز واقعی کاربران غیرفعال است.</div>':''}</div>`;
 }
 function settingsPage(){const t=UI.st||'acct';const tabs=[['acct','🧾 حسابداری'],['inv','🏬 انبار و بها'],['prod','🏭 تولید'],['tax','🧮 مالیات'],['alerts','🔔 هشدارها'],['look','🎨 ظاهر و لوگو'],...(can('us')?[['users','👤 کاربران'],['roles','🔐 نقش‌ها و دسترسی']]:[]),['guest','🌐 نمایش عمومی'],['bak','💾 پشتیبان و همگام‌سازی'],['ctl','🛡️ کنترل‌ها']];let h=chips(tabs,tabs.some(x=>x[0]===t)?t:'acct','st');const cfg=settingsOf();
