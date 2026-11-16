@@ -1,4 +1,4 @@
-MR, KHORASANI Web PWA 2.7.3
+MR, KHORASANI Web PWA 2.9.3
 
 این بسته شامل رابط کامل حسابداری نسخه وب با محیط مهمان مستقل، ثبت آزمایشی عملیات، گزارش فعالیت نشست، نصب PWA و فایل‌های لازم برای GitHub Pages است.
 
@@ -15,4 +15,4 @@ MR, KHORASANI Web PWA 2.7.3
 - iPhone و iPad: در Safari گزینه Share و سپس Add to Home Screen را بزنید.
 - این بسته PWA است و روی Android، iOS و دسکتاپ قابل نصب است؛ APK فقط برای Android قابل استفاده است.
 
-برای انتشار روی GitHub Pages، محتویات ریشه همین بسته در ریشه شاخه main قرار می‌گیرد. آدرس API مهمان در supabase-config.js و index.html تنظیم شده است.
+برای انتشار روی GitHub Pages، محتویات ریشه همین بسته در ریشه شاخه main قرار می‌گیرد. نشانی ورود مهمان در تنظیمات دامنه اختصاصی و QR داخل برنامه تعریف می‌شود.
