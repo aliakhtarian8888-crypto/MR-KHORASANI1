@@ -40,11 +40,12 @@ jobs:
           gradle-version: '8.9'
       - name: Generate independent QR codes
         run: |
-          python3 -m pip install --quiet "qrcode[pil]"
+          python3 -m pip install --quiet "qrcode[pil]" cairosvg
           python3 - <<'PY'
           import qrcode
-          from PIL import Image
-          Image.open("icon-192.png").convert("RGBA").resize((512, 512), Image.Resampling.LANCZOS).save("icon-512.png")
+          import cairosvg
+          cairosvg.svg2png(url="icon.svg", write_to="icon-192.png", output_width=192, output_height=192)
+          cairosvg.svg2png(url="icon.svg", write_to="icon-512.png", output_width=512, output_height=512)
           entries = {
               "guest-entry-qr.png": "https://aliakhtarian8888-crypto.github.io/MR-KHORASANI1/?g=1",
               "android-install-qr.png": "https://aliakhtarian8888-crypto.github.io/MR-KHORASANI1/downloads/MR-KHORASANI-2.9.4.apk",
