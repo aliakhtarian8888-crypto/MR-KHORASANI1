@@ -5,7 +5,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const activity = fs.readFileSync(path.join(root, 'android/app/src/main/java/com/mrkhorasani/app/MainActivity.java'), 'utf8');
-const pagesWorkflow = fs.readFileSync(path.join(root, '.github/workflows/deploy-pages.yml'), 'utf8');
+const pagesWorkflow = fs.readFileSync(path.join(root, '.github/workflows/android-apk.yml'), 'utf8');
 const apkWorkflow = fs.readFileSync(path.join(root, '.github/workflows/android-apk.yml'), 'utf8');
 
 test('native Android starts at organization login and cannot enter the guest session flow', () => {
@@ -26,8 +26,10 @@ test('browser guest QR is separate and the one-time guest route is still auto-is
   assert.match(html, /readEntry\(location\)\?\.autoStartGuest/);
 });
 test('Pages deployment publishes the Android APK at the stable QR target', () => {
-  assert.match(pagesWorkflow, /assembleDebug/);
-  assert.match(pagesWorkflow, /downloads\/MR-KHORASANI-2\.9\.4\.apk/);
+  assert.match(apkWorkflow, /cp dist\/MR-KHORASANI-2\.9\.4\.apk \"\$SITE\/downloads\/MR-KHORASANI-2\.9\.4\.apk\"/);
+  assert.match(apkWorkflow, /name: github-pages/);
+  assert.match(apkWorkflow, /deploy-pages:\s+needs: test-and-build\s+if: github\.ref == 'refs\/heads\/main'/);
+  assert.match(apkWorkflow, /actions\/deploy-pages/);
 });
 test('release workflow packages Android APK and browser guest PWA as two distinct ZIPs', () => {
   assert.match(apkWorkflow, /MR-KHORASANI-ANDROID-INSTALL-v2\.9\.4\.zip/);

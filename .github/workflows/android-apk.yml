@@ -92,3 +92,43 @@ jobs:
           path: dist/MR-KHORASANI-2.9.4.apk
           if-no-files-found: error
           retention-days: 14
+      - name: Assemble GitHub Pages from the exact APK already packaged above
+        shell: bash
+        run: |
+          set -euo pipefail
+          SITE="$RUNNER_TEMP/site"
+          mkdir -p "$SITE/downloads"
+          cp index.html guest-runtime.js supabase-config.js supabase-client.js \
+            warehouse-migration.js mrk-data-tools.js mrk-export-store.js \
+            manifest.webmanifest sw.js icon.svg icon-192.png icon-512.png \
+            apple-touch-icon.png brand-mr.svg guest-entry-qr.png android-install-qr.png \
+            android-install.html .nojekyll "$SITE/"
+          cp dist/MR-KHORASANI-2.9.4.apk "$SITE/downloads/MR-KHORASANI-2.9.4.apk"
+          test -s "$SITE/downloads/MR-KHORASANI-2.9.4.apk"
+          cmp dist/MR-KHORASANI-2.9.4.apk "$SITE/downloads/MR-KHORASANI-2.9.4.apk"
+          tar --dereference --hard-dereference --directory "$SITE" -cvf "$RUNNER_TEMP/artifact.tar" .
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: github-pages
+          path: ${{ runner.temp }}/artifact.tar
+          retention-days: 1
+          if-no-files-found: error
+
+  deploy-pages:
+    needs: test-and-build
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - name: Configure Pages
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+      - name: Publish Pages site
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
