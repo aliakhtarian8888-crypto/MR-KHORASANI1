@@ -12,7 +12,7 @@ const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 test('browser export store is loaded before the accounting application script and cached offline', () => {
   assert.match(html, /<script src="mrk-export-store\.js"><\/script><script>'use strict';/);
   assert.match(sw, /mrk-export-store\.js/);
-  assert.match(sw, /2\.9\.2-opening-balances-guest-qr/);
+  assert.match(sw, /2\.9\.3-role-matrix/);
 });
 
 test('the complete inline accounting application script parses as valid JavaScript', () => {
@@ -193,4 +193,10 @@ test('permission matrix updates the selected user's permissions without mutating
  const source=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
  assert.match(source,/const next=checked\?\[\.\.\.current,key\]:current\.filter/);
  assert.doesNotMatch(source,/ACT\.setUserPermission[\s\S]{0,500}S\.roles\[/);
+});
+
+test('permission matrix prevents a user from being left with an empty permission set',()=>{
+ const start=html.indexOf("<script>'use strict';");
+ const source=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
+ assert.match(source,/if\(!checked&&next\.length===0\)return toast\('برای هر کاربر دست‌کم یک دسترسی باید باقی بماند'\)/);
 });
