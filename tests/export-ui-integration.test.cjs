@@ -12,7 +12,7 @@ const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 test('browser export store is loaded before the accounting application script and cached offline', () => {
   assert.match(html, /<script src="mrk-export-store\.js"><\/script><script>'use strict';/);
   assert.match(sw, /mrk-export-store\.js/);
-  assert.match(sw, /2\.9\.1-native-file-transfer/);
+  assert.match(sw, /2\.9\.2-opening-balances-guest-qr/);
 });
 
 test('the complete inline accounting application script parses as valid JavaScript', () => {
@@ -134,6 +134,42 @@ test('admin user report includes guest sessions and QR entry image is embedded i
  assert.match(source,/\?g=1/);
 });
 test('QR guest link automatically issues a guest session without a user password',()=>{
+ const source=fs.readFileSync(path.join(root,'guest-runtime.js'),'utf8');
+ assert.match(source,/autoStartGuest: query\.get\('guest'\) === '1' \|\| query\.get\('g'\) === '1'/);
+ const start=html.indexOf("<script>'use strict';");
+ const inline=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
+ assert.match(inline,/readEntry\(location\)\?\.autoStartGuest/);
+});
+
+test('opening balance workbench preserves master names and posts named opening journal lines',()=>{
+ const start=html.indexOf("<script>'use strict';");
+ const source=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
+ assert.match(source,/function openingBalancesPage\(\)/);
+ assert.match(source,/ACT\.saveOpeningBalances=/);
+ assert.match(source,/S\.parties\.map\(p=>/);
+ assert.match(source,/S\.goods\.map\(g=>/);
+ assert.match(source,/p\.open=x\.amount;p\.side=x\.side/);
+ assert.match(source,/g\.q1=x\.q;g\.c1=x\.cost/);
+ assert.match(source,/مانده اول دوره شخص - '\+p\.name/);
+ assert.match(source,/موجودی اول دوره کالا - '\+g\.name/);
+});
+test('admin password visibility is a reveal toggle and stored passwords are not retrievable',()=>{
+ const start=html.indexOf("<script>'use strict';");
+ const source=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
+ assert.match(source,/data-a="toggleUserPassword"/);
+ assert.match(source,/ACT\.toggleUserPassword=/);
+ assert.match(source,/رمز فعلی کاربران.*قابل بازیابی یا نمایش نیست/);
+});
+test('admin user settings show guest audit records alongside company users and contain a static QR',()=>{
+ const start=html.indexOf("<script>'use strict';");
+ const source=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
+ assert.match(source,/گزارش یکپارچه کاربران و مهمان‌ها/);
+ assert.match(source,/data-a="loadGuestAudit"/);
+ assert.match(source,/function guestQrSvg\(\)/);
+ assert.match(source,/GUEST_QR_ROWS=/);
+ assert.match(source,/\?g=1/);
+});
+test('guest QR entry automatically starts a short-lived guest session without credentials',()=>{
  const source=fs.readFileSync(path.join(root,'guest-runtime.js'),'utf8');
  assert.match(source,/autoStartGuest: query\.get\('guest'\) === '1' \|\| query\.get\('g'\) === '1'/);
  const start=html.indexOf("<script>'use strict';");
