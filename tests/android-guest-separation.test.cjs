@@ -28,7 +28,7 @@ test('browser guest QR is separate and the one-time guest route is still auto-is
 test('Pages deployment publishes the Android APK at the stable QR target', () => {
   assert.match(apkWorkflow, /cp dist\/MR-KHORASANI-2\.9\.4\.apk \"\$SITE\/downloads\/MR-KHORASANI-2\.9\.4\.apk\"/);
   assert.match(apkWorkflow, /name: github-pages/);
-  assert.match(apkWorkflow, /deploy-pages:\s+needs: test-and-build/);
+  assert.match(apkWorkflow, /deploy-pages:\s+needs: test-and-build\s+if: github\.ref == 'refs\/heads\/main'/);
   assert.match(apkWorkflow, /actions\/deploy-pages/);
 });
 test('release workflow packages Android APK and browser guest PWA as two distinct ZIPs', () => {
