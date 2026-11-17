@@ -6,7 +6,7 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "2.9.4"
+VERSION = "2.9.5"
 GUEST_FILES = [
     ".nojekyll", "index.html", "manifest.webmanifest", "supabase-config.js",
     "supabase-client.js", "guest-runtime.js", "warehouse-migration.js",
@@ -50,7 +50,7 @@ def package(output: Path, apk_path: Path, version: str = VERSION) -> tuple[Path,
     guest_files = {name: read_required(name) for name in GUEST_FILES}
     verify_guest_bundle(guest_files)
     android_files = {
-        "MR-KHORASANI-2.9.4.apk": apk_path.read_bytes(),
+        "MR-KHORASANI-2.9.5.apk": apk_path.read_bytes(),
         "android-install-qr.png": read_required("android-install-qr.png"),
         "README-ANDROID-INSTALL-FA.txt": read_required("README-ANDROID-INSTALL-FA.txt"),
     }

@@ -1,4 +1,4 @@
-<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#081a35"><meta name="application-version" content="2.9.4-separated-entry"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="MR KHORASANI"><meta name="format-detection" content="telephone=no"><meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://klomsegarpfdkhkmoazy.supabase.co; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'"><title>MR, KHORASANI — حسابداری و مدیریت انبار</title><link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/svg+xml" href="icon.svg"><link rel="apple-touch-icon" href="icon-192.png"><style>:root{--p:#081a35;--p2:#12315d;--a:#d6ad55;--bg:#071326;--ink:#f4ead2;--mut:#b4c0d2;--card:#0d203d;--line:#314563;--bad:#f07870;--good:#d6ad55;--i1:#d6ad55;--i2:#d6ad55;--i3:#d6ad55;--i4:#d6ad55;--i5:#d6ad55;--i6:#d6ad55;--i7:#d6ad55;--i8:#d6ad55}
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#081a35"><meta name="application-version" content="2.9.5-separated-entry"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="MR KHORASANI"><meta name="format-detection" content="telephone=no"><meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://klomsegarpfdkhkmoazy.supabase.co; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'"><title>MR, KHORASANI — حسابداری و مدیریت انبار</title><link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/svg+xml" href="icon.svg"><link rel="apple-touch-icon" href="icon-192.png"><style>:root{--p:#081a35;--p2:#12315d;--a:#d6ad55;--bg:#071326;--ink:#f4ead2;--mut:#b4c0d2;--card:#0d203d;--line:#314563;--bad:#f07870;--good:#d6ad55;--i1:#d6ad55;--i2:#d6ad55;--i3:#d6ad55;--i4:#d6ad55;--i5:#d6ad55;--i6:#d6ad55;--i7:#d6ad55;--i8:#d6ad55}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Noto Naskh Arabic","Noto Sans Arabic",Arial,sans-serif;font-size:15px;line-height:1.7;padding:0 0 calc(70px + env(safe-area-inset-bottom,0px));direction:rtl;padding-top:env(safe-area-inset-top,0px)}
 header{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;position:sticky;top:0;z-index:20;padding:8px 12px 0;border-bottom:3px solid var(--a)}
@@ -41,7 +41,8 @@ nav{position:fixed;bottom:0;right:0;left:0;background:#fff;border-top:1px solid 
 @media print{body.printing header,body.printing nav,body.printing .filt,body.printing .xbar,body.printing .chips,body.printing .topbar,body.printing .tgrid,body.printing .kgrid{display:none!important}body{background:#fff;padding:0}.card{box-shadow:none;border:0}}
 
 .filebtn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center}.filebtn input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:0;min-height:0;padding:0;border:0}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}.mbox{background:#fff;border-radius:16px;padding:16px;width:100%;max-width:360px}.mbox p{color:var(--mut);margin:6px 0}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}.mbox{background:#fff;border-radius:16px;padding:16px;width:100%;max-width:360px}
+.mbox{color:#17243a}.mbox p,.mbox .hint{color:#526071}.mbox .info{color:#26354a}.mbox p{color:var(--mut);margin:6px 0}
 
 .conn{margin-top:14px;text-align:right}.conn summary{cursor:pointer;color:var(--p2);font-size:13px}
 
@@ -809,6 +810,21 @@ window.MRKNativeFileResult=function(requestId,success,message){
  else pending.reject(new Error(String(message||'ذخیره فایل انجام نشد.')));
 };
 function requestBlobDownload(name,blob){
+ const mimeFor=(fileName,type)=>{
+  const ext=(String(fileName).split('.').pop()||'').toLowerCase();
+  return type|| (ext==='xlsx'?'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':ext==='pdf'?'application/pdf':ext==='json'?'application/json':ext==='csv'?'text/csv':'application/octet-stream');
+ };
+ const mime=mimeFor(name,blob?.type);
+ const shareFallback=()=>{
+  if(typeof File==='undefined'||typeof navigator.share!=='function')return null;
+  try{
+   const file=new File([blob],name,{type:mime});
+   if(typeof navigator.canShare==='function'&&!navigator.canShare({files:[file]}))return null;
+   return navigator.share({files:[file],title:name,text:'فایل خروجی MR,KHORASANI'}).then(
+    ()=>({saved:false,shared:true,requested:true,message:'فایل به منوی اشتراک‌گذاری دستگاه منتقل شد؛ گزینه ذخیره در Files، دانلودها یا فضای ابری را انتخاب کنید.'})
+   );
+  }catch(error){return Promise.reject(error)}
+ };
  if(window.AndroidBridge&&typeof window.AndroidBridge.saveFile==='function'){
   return new Promise((resolve,reject)=>{
    const requestId='mrk-save-'+Date.now()+'-'+(++nativeSaveSequence);
@@ -817,7 +833,7 @@ function requestBlobDownload(name,blob){
    reader.onload=()=>{
     const data=String(reader.result||'').split(',')[1]||'';
     if(!data){nativeSaveRequests.delete(requestId);reject(new Error('خواندن فایل خروجی ناموفق بود'));return}
-    try{window.AndroidBridge.saveFile(requestId,name,blob.type||'application/octet-stream',data)}
+    try{window.AndroidBridge.saveFile(requestId,name,mime,data)}
     catch(error){nativeSaveRequests.delete(requestId);reject(error)}
    };
    reader.onerror=()=>{nativeSaveRequests.delete(requestId);reject(new Error('آماده‌سازی فایل برای ذخیره در گوشی ناموفق بود'))};
@@ -827,20 +843,28 @@ function requestBlobDownload(name,blob){
  if(typeof window.showSaveFilePicker==='function'){
   return (async()=>{
    const ext=(String(name).split('.').pop()||'').toLowerCase();
-   const mime=ext==='xlsx'?'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':ext==='pdf'?'application/pdf':ext==='json'?'application/json':ext==='csv'?'text/csv':'application/octet-stream';
-   const handle=await window.showSaveFilePicker({suggestedName:name,types:[{description:'فایل خروجی MR,KHORASANI',accept:{[mime]:['.'+ext]}}]});
-   const writable=await handle.createWritable();
-   await writable.write(blob);
-   await writable.close();
-   return{saved:true,message:'فایل در مسیر انتخاب‌شده ذخیره شد.'};
+   try{
+    const handle=await window.showSaveFilePicker({suggestedName:name,types:[{description:'فایل خروجی MR,KHORASANI',accept:{[mime]:['.'+ext]}}]});
+    const writable=await handle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+    return{saved:true,message:'فایل در مسیر انتخاب‌شده ذخیره شد.'};
+   }catch(error){
+    if(error&&error.name==='AbortError')throw error;
+    const shared=shareFallback();
+    if(shared)return shared;
+    throw error;
+   }
   })();
  }
+ const shared=shareFallback();
+ if(shared)return shared;
  try{
   const url=URL.createObjectURL(blob),a=document.createElement('a');
-  a.href=url;a.download=name;a.rel='noopener';a.style.cssText='position:fixed;left:-10000px;top:0';
+  a.href=url;a.download=name;a.rel='noopener';a.style.cssText='position:fixed;left:-10000px;top:0;width:1px;height:1px;opacity:0';
   document.body.appendChild(a);a.click();
-  setTimeout(()=>{URL.revokeObjectURL(url);a.remove()},30000);
-  return Promise.resolve({saved:false,requested:true,message:'درخواست دانلود به مرورگر سپرده شد؛ پوشهٔ Downloads را بررسی کنید.'});
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove()},120000);
+  return Promise.resolve({saved:false,requested:true,message:'درخواست دانلود به مرورگر ارسال شد؛ پوشه Downloads را بررسی کنید. برای انتخاب مسیر دلخواه، APK بومی MR,KHORASANI را نصب کنید.'});
  }catch(error){return Promise.reject(error)}
 }
 async function saveRecordToDevice(record){
@@ -874,7 +898,7 @@ function showExportReceipt(record){
  exportRecordCache.set(record.id,record);
  const m=document.createElement('div');m.className='modal';
  const storageNote=record.persisted?'یک نسخهٔ پشتیبان موقت نیز در حافظهٔ همین مرورگر نگهداری می‌شود.':'این فایل در فهرست موقت برنامه نگهداری می‌شود؛ برای ذخیره پایدار، مسیر حافظه گوشی را انتخاب کنید.';
- m.innerHTML='<div class="mbox"><b>فایل خروجی آماده است</b><p>فایل «'+esc(record.name)+'» آماده ذخیره است.</p><div class="info">حجم: '+esc(window.MRKExportStore?.formatBytes(record.size)||'')+' — '+esc(new Date(record.createdAt).toLocaleString('fa-IR'))+'</div><p class="hint">'+storageNote+' با زدن «ذخیره در حافظه تلفن»، پوشه یا مسیر دلخواه را در پنجره سیستم انتخاب کنید؛ نتیجه ذخیره پس از نوشتن واقعی فایل اعلام می‌شود.</p><div class="row mt"><button class="btn pri" id="exportSaveToDevice">ذخیره در حافظه تلفن</button><button class="btn" id="exportShareToDevice">اشتراک‌گذاری / ذخیره در فایل‌ها</button><button class="btn" id="exportSavedList">فایل‌های ذخیره‌شده</button><button class="btn" id="exportReceiptClose">بستن</button></div></div>';
+ m.innerHTML='<div class="mbox"><b>فایل خروجی آماده است</b><p>فایل «'+esc(record.name)+'» آماده ذخیره است.</p><div class="info">حجم: '+esc(window.MRKExportStore?.formatBytes(record.size)||'')+' — '+esc(new Date(record.createdAt).toLocaleString('fa-IR'))+'</div><p class="hint">'+storageNote+' با زدن «ذخیره در حافظه تلفن»، APK بومی پنجره انتخاب مسیر اندروید را باز می‌کند؛ در مبدل‌های وبی، منوی اشتراک‌گذاری یا دانلود مرورگر استفاده می‌شود.</p><div class="row mt"><button class="btn pri" id="exportSaveToDevice">ذخیره در حافظه تلفن</button><button class="btn" id="exportShareToDevice">اشتراک‌گذاری / ذخیره در فایل‌ها</button><button class="btn" id="exportSavedList">فایل‌های ذخیره‌شده</button><button class="btn" id="exportReceiptClose">بستن</button></div></div>';
  document.body.appendChild(m);
  m.querySelector('#exportSaveToDevice').onclick=()=>saveRecordToDevice(record);
  m.querySelector('#exportShareToDevice').onclick=()=>shareExportRecord(record);
@@ -885,30 +909,51 @@ function saveBlob(name,blob,options){
  const opts=options||{};
  const clean=String(name||'MR-KHORASANI-export.bin').replace(/[\\/:*?"<>|]/g,'-').replace(/[. ]+$/g,'').slice(0,180);
  const seed={id:'pending_'+Date.now()+'_'+(++nativeSaveSequence),name:clean,type:String(blob?.type||'application/octet-stream'),size:Number(blob?.size)||0,createdAt:Date.now(),blob,persisted:false};
+ const isExcel=/\.xlsx$/i.test(clean);
+ const shouldDeliver=opts.directDownload===true||(opts.directDownload!==false&&isExcel);
+ const showReceipt=opts.showReceipt!==false&&!shouldDeliver;
+ // Start the system picker/share/download synchronously while the export button's user activation is still valid.
+ if(shouldDeliver){
+  try{
+   const delivery=requestBlobDownload(clean,blob);
+   Promise.resolve(delivery).then(result=>{
+    if(result&&result.message)toast(result.message);
+    else if(result&&result.saved)toast('فایل در حافظه دستگاه ذخیره شد.');
+   }).catch(error=>{
+    if(error&&error.name==='AbortError')return;
+    toast('انتقال مستقیم ناموفق بود؛ فایل در فهرست خروجی‌های برنامه نگهداری می‌شود. '+(error?.message||''));
+   });
+  }catch(error){toast('انتقال مستقیم ناموفق بود؛ فایل در فهرست خروجی‌ها نگهداری می‌شود. '+(error?.message||''))}
+ }
  if(!localExportStore){
   exportRecordCache.set(seed.id,seed);
-  if(opts.showReceipt!==false){toast('فایل آماده است؛ ذخیره‌ساز محلی مرورگر در دسترس نیست.');showExportReceipt(seed)}
+  if(showReceipt){toast('فایل آماده است؛ نسخه موقت همین نشست در دسترس است.');showExportReceipt(seed)}
   return false;
  }
  localExportStore.save(clean,blob).then(async record=>{
   record.persisted=true;
   exportRecordCache.set(record.id,record);
   try{if(navigator.storage?.persist)await navigator.storage.persist()}catch(error){}
-  if(opts.showReceipt!==false){toast('فایل آماده شد؛ برای ذخیره در حافظه گوشی مسیر را انتخاب کنید.');showExportReceipt(record)}
+  if(showReceipt){toast('فایل آماده شد؛ برای انتقال به گوشی از دکمه ذخیره استفاده کنید.');showExportReceipt(record)}
  }).catch(error=>{
   exportRecordCache.set(seed.id,seed);
-  if(opts.showReceipt!==false){toast('ذخیره موقت فایل ناموفق بود؛ نسخه آماده انتقال به گوشی است. '+(error?.message||''));showExportReceipt(seed)}
+  if(showReceipt){toast('ذخیره موقت فایل ناموفق بود؛ نسخه آماده انتقال به گوشی است. '+(error?.message||''));showExportReceipt(seed)}
  });
  return true;
 }
 async function openSavedExports(){
- if(!localExportStore)return toast('حافظهٔ محلی مرورگر در دسترس نیست؛ فایل‌های همین نشست در حافظه موقت هستند.');
  try{
-  const rows=await localExportStore.list();
-  rows.forEach(r=>{r.persisted=true;exportRecordCache.set(r.id,r)});
+  let rows=[];
+  if(localExportStore){
+   try{rows=await localExportStore.list();rows.forEach(r=>{r.persisted=true;exportRecordCache.set(r.id,r)})}
+   catch(error){rows=[]}
+  }
+  const seen=new Set(rows.map(r=>String(r.id)));
+  for(const record of exportRecordCache.values())if(!seen.has(String(record.id)))rows.push(record);
+  rows.sort((a,b)=>(Number(b.createdAt)||0)-(Number(a.createdAt)||0));
   const m=document.createElement('div');m.className='modal';
-  const body=rows.length?rows.map(r=>'<div class="orow" style="align-items:center;gap:8px;flex-wrap:wrap"><div style="min-width:150px;flex:1"><b>'+esc(r.name)+'</b><div class="hint">'+esc(window.MRKExportStore.formatBytes(r.size))+' — '+esc(new Date(r.createdAt).toLocaleString('fa-IR'))+'</div></div><div class="acts"><button class="btn sm" data-export-action="download" data-export-id="'+esc(r.id)+'">ذخیره در گوشی</button><button class="btn sm" data-export-action="share" data-export-id="'+esc(r.id)+'">اشتراک</button><button class="btn sm" data-export-action="delete" data-export-id="'+esc(r.id)+'">حذف</button></div></div>').join(''):'<p class="hint">هنوز فایلی در حافظهٔ مرورگر ذخیره نشده است.</p>';
-  m.innerHTML='<div class="mbox"><b>فایل‌های خروجی ذخیره‌شده</b><p class="hint">این نسخه‌ها در حافظهٔ محلی همین مرورگر نگهداری می‌شوند و برای انتقال به حافظه گوشی، مسیر ذخیره را انتخاب کنید.</p><div style="max-height:55vh;overflow:auto">'+body+'</div><div class="row mt"><button class="btn" id="savedExportsClose">بستن</button></div></div>';
+  const body=rows.length?rows.map(r=>'<div class="orow" style="align-items:center;gap:8px;flex-wrap:wrap"><div style="min-width:150px;flex:1"><b>'+esc(r.name)+'</b><div class="hint">'+esc(window.MRKExportStore?.formatBytes(r.size)||'')+' — '+esc(new Date(r.createdAt).toLocaleString('fa-IR'))+(r.persisted?'':' — موقت همین نشست')+'</div></div><div class="acts"><button class="btn sm" data-export-action="download" data-export-id="'+esc(r.id)+'">ذخیره در گوشی</button><button class="btn sm" data-export-action="share" data-export-id="'+esc(r.id)+'">اشتراک</button><button class="btn sm" data-export-action="delete" data-export-id="'+esc(r.id)+'">حذف</button></div></div>').join(''):'<p class="hint">هنوز فایلی در حافظه برنامه ذخیره نشده است.</p>';
+  m.innerHTML='<div class="mbox"><b>فایل‌های خروجی ذخیره‌شده</b><p class="hint">فایل‌ها در حافظه محلی برنامه نگهداری می‌شوند. ذخیره در APK بومی، پنجره انتخاب مسیر اندروید را باز می‌کند؛ در مرورگرهای موبایل از اشتراک‌گذاری یا دانلود مرورگر استفاده می‌شود.</p><div style="max-height:55vh;overflow:auto">'+body+'</div><div class="row mt"><button class="btn" id="savedExportsClose">بستن</button></div></div>';
   document.body.appendChild(m);
   m.querySelector('#savedExportsClose').onclick=()=>m.remove();
   m.querySelectorAll('[data-export-action]').forEach(button=>button.addEventListener('click',async()=>{
@@ -916,8 +961,11 @@ async function openSavedExports(){
    if(action==='download')return saveRecordToDevice(record);
    if(action==='share')return shareExportRecord(record);
    if(action==='delete'){
-    if(!confirm('این فایل خروجی از حافظهٔ مرورگر حذف شود؟'))return;
-    try{await localExportStore.remove(id);exportRecordCache.delete(id);m.remove();openSavedExports();toast('فایل از حافظهٔ مرورگر حذف شد')}catch(error){toast('حذف فایل ناموفق بود: '+(error?.message||''))}
+    if(!confirm('این فایل خروجی از حافظه برنامه حذف شود؟'))return;
+    try{
+     if(record?.persisted&&localExportStore)await localExportStore.remove(id);
+     exportRecordCache.delete(id);m.remove();openSavedExports();toast('فایل از حافظه برنامه حذف شد');
+    }catch(error){toast('حذف فایل ناموفق بود: '+(error?.message||''))}
    }
   }));
  }catch(error){toast('خواندن فایل‌های ذخیره‌شده ناموفق بود: '+(error?.message||''))}
@@ -1851,7 +1899,7 @@ function settingsPage(){const t=UI.st||'acct';const tabs=[['acct','🧾 حساب
  else if(t==='roles')h+=permissionMatrixPage()
  else if(t==='guest')h+=`<div class="card"><div class="ftitle">ورود مهمان فقط از مرورگر</div><div class="grid2"><div>${guestQrSvg()}</div><div><b>نام کاربر: مهمان</b><div class="hint">با اسکن QR، صفحه مرورگر باز می‌شود و رمز/توکن امن یک‌بارمصرف برای همان نشست به‌صورت خودکار صادر می‌شود. حساب‌های سازمانی و اطلاعات شرکت در دسترس مهمان نیستند.</div><button class="btn pri wide mt" data-a="openGuestAuto">بازکردن لینک ورود مهمان در مرورگر</button></div></div><div class="hint" dir="ltr">${GUEST_BROWSER_URL}</div><div class="hint mt">عملیات مهمان فقط در نشست موقت مرورگر نگهداری می‌شود و به دفاتر واقعی شرکت منتقل نمی‌شود.</div></div>`;
  else if(t==='bak')h+=`<div class="card"><div class="ftitle">پشتیبان‌گیری</div><div class="row"><button class="btn pri" data-a="bakDl">💾 دریافت فایل پشتیبان</button><button class="btn" data-a="bakMail">✉️ ارسال پشتیبان به ایمیل</button><label class="btn filebtn">♻️ بازیابی از فایل<input type="file" data-restore accept=".json,application/json,text/plain,application/octet-stream,*/*"></label></div><label>نشانی ایمیل برای پشتیبان و خروجی‌ها</label><input id="s_mail" dir="ltr" value="${esc(S.email||'') }" onchange="S.email=this.value.trim();save()"><div class="hint">در گوشی با «اشتراک‌گذاری» فایل مستقیم به برنامهٔ ایمیل پیوست می‌شود؛ در غیر این صورت فایل دانلود و پنجرهٔ ایمیل باز می‌شود.</div></div><div class="card"><div class="ftitle">همگام‌سازی ابری امن</div><div class="hint">اتصال از طریق حساب کاربری سازمانی و سطح دسترسی پایگاه داده انجام می‌شود؛ کلید مشترک در برنامه ذخیره نشده است.</div><div class="trow"><span>شرکت فعال</span><b>${esc(S.company||'—')}</b></div><div class="trow"><span>شناسه شرکت</span><b dir="ltr">${esc(UI.companyId||'—')}</b></div><div class="hint" id="syncMsg">${esc(SYNC.msg||'برای ذخیره و دریافت تغییرات از دکمه همگام‌سازی استفاده کنید.')}</div><button class="btn pri mt" data-a="syncSave">🔄 همگام‌سازی اکنون</button><div class="hint">تغییرات پس از ثبت، با نشست احراز هویت‌شده ارسال و نسخه سرور با کنترل تداخل بررسی می‌شود.</div></div>`;
- else h+=`<div class="card"><div class="ftitle">کنترل‌ها</div><label class="chk"><input type="checkbox" ${S.autoPdf!==false?'checked':''} data-a="togPdf"> پس از بستن روز، PDF دفتر روزنامه و دفتر کل همان روز خودکار ذخیره شود</label><div class="trow"><span>شناسهٔ این دستگاه</span><b dir="ltr">${esc(S.dev)}</b></div><div class="trow"><span>آخرین پشتیبان خودکار (بستن روز)</span><b>${S.lastBackup?fa(S.lastBackup):'—'}</b></div><div class="trow"><span>نسخهٔ برنامه</span><b>${fa('2.9.4')}</b></div><div class="hint">توازن سند، قفل روز بسته، حذف منطقی، مسیر حسابرسی و شماره‌گذاری یکتا در هستهٔ برنامه اجباری هستند.</div></div>`;
+ else h+=`<div class="card"><div class="ftitle">کنترل‌ها</div><label class="chk"><input type="checkbox" ${S.autoPdf!==false?'checked':''} data-a="togPdf"> پس از بستن روز، PDF دفتر روزنامه و دفتر کل همان روز خودکار ذخیره شود</label><div class="trow"><span>شناسهٔ این دستگاه</span><b dir="ltr">${esc(S.dev)}</b></div><div class="trow"><span>آخرین پشتیبان خودکار (بستن روز)</span><b>${S.lastBackup?fa(S.lastBackup):'—'}</b></div><div class="trow"><span>نسخهٔ برنامه</span><b>${fa('2.9.5')}</b></div><div class="hint">توازن سند، قفل روز بسته، حذف منطقی، مسیر حسابرسی و شماره‌گذاری یکتا در هستهٔ برنامه اجباری هستند.</div></div>`;
  return h}
 
 function persistSettings(section,patch,label){const before=clone(settingsOf());S.settings=settingsOf();S.settings[section]={...S.settings[section],...patch};S.setMt=Date.now();audit('تغییر تنظیمات',label||section,section,before[section],S.settings[section]);save();B=index(build(S));render();toast('تنظیمات ذخیره شد')}
