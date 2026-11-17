@@ -305,3 +305,36 @@ test('export modal uses readable text on its white background', () => {
   assert.match(html, /\.mbox\{[^}]*color:#17243a/);
   assert.match(html, /\.mbox p,\.mbox \.hint\{color:#526071/);
 });
+
+
+test('asynchronous guest boot renders a loading state before waiting for the session API', () => {
+  const start = html.indexOf("<script>'use strict';");
+  const source = html.slice(start + '<script>'.length, html.indexOf('</script>', start + '<script>'.length));
+  const begin = source.indexOf('async function startGuest(');
+  const end = source.indexOf('\nACT.openGuestAuto=', begin);
+  const guestBoot = source.slice(begin, end);
+  assert.match(source, /function guestLoadingView\(\)/);
+  assert.match(guestBoot, /guestLoadingView\(\)/);
+  assert.ok(guestBoot.indexOf('guestLoadingView()') < guestBoot.indexOf('await temp.resume()'));
+  assert.match(guestBoot, /catch\(e\)/);
+});
+
+test('guest boot works without direct access to browser sessionStorage or localStorage', () => {
+  const start = html.indexOf("<script>'use strict';");
+  const source = html.slice(start + '<script>'.length, html.indexOf('</script>', start + '<script>'.length));
+  assert.match(source, /function safeSessionStorage\(\)/);
+  const begin = source.indexOf('async function startGuest(');
+  const end = source.indexOf('\nACT.openGuestAuto=', begin);
+  const guestBoot = source.slice(begin, end);
+  assert.doesNotMatch(guestBoot, /sessionStorage:window\.sessionStorage/);
+  assert.match(guestBoot, /sessionStorage:safeSessionStorage\(\)/);
+});
+
+test('browser boot explicitly handles QR auto-start and awaits guest startup without a false 800ms failure overlay', () => {
+  const start = html.indexOf("<script>'use strict';");
+  const source = html.slice(start + '<script>'.length, html.indexOf('</script>', start + '<script>'.length));
+  assert.match(source, /async function boot\(\)/);
+  assert.match(source, /if\(entry\.autoStartGuest\)[\s\S]{0,500}issueGuestSession/);
+  assert.match(source, /await boot\(\)/);
+  assert.doesNotMatch(source, /محتوای اصلی برنامه رندر نشد/);
+});
