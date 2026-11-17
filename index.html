@@ -909,7 +909,7 @@ function saveBlob(name,blob,options){
  const opts=options||{};
  const clean=String(name||'MR-KHORASANI-export.bin').replace(/[\\/:*?"<>|]/g,'-').replace(/[. ]+$/g,'').slice(0,180);
  const seed={id:'pending_'+Date.now()+'_'+(++nativeSaveSequence),name:clean,type:String(blob?.type||'application/octet-stream'),size:Number(blob?.size)||0,createdAt:Date.now(),blob,persisted:false};
- const isExcel=/\\.xlsx$/i.test(clean);
+ const isExcel=/\.xlsx$/i.test(clean);
  const shouldDeliver=opts.directDownload===true||(opts.directDownload!==false&&isExcel);
  const showReceipt=opts.showReceipt!==false&&!shouldDeliver;
  // Start the system picker/share/download synchronously while the export button's user activation is still valid.
