@@ -222,7 +222,7 @@ test('Excel export starts device delivery immediately from the original user act
 test('Excel exports use the direct device-delivery path by default, not only the temporary file list', () => {
   const start = html.indexOf("<script>'use strict';");
   const source = html.slice(start + '<script>'.length, html.indexOf('</script>', start + '<script>'.length));
-  assert.match(source, /saveBlob\(fname\('خروجی '\+label,'xlsx'\),xlsxBlob\(filtered,label\),\{directDownload:true\}\)/);
+  assert.match(source, /saveBlob\(fname\('خروجی '\+label,'xlsx'\),xlsxBlob\(filtered,label\)\)/);
   assert.match(source, /function exportBaseData\(k\)/);
   assert.match(source, /ACT\.dataExcelExport=/);
 });
