@@ -200,3 +200,51 @@ test('permission matrix prevents a user from being left with an empty permission
  const source=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
  assert.match(source,/if\(!checked&&next\.length===0\)return toast\('برای هر کاربر دست‌کم یک دسترسی باید باقی بماند'\)/);
 });
+
+
+test('Excel export starts device delivery immediately from the original user action and still archives the file locally', () => {
+  const start = html.indexOf("<script>'use strict';");
+  const source = html.slice(start + '<script>'.length, html.indexOf('</script>', start + '<script>'.length));
+  const saveStart = source.indexOf('function saveBlob(');
+  const saveEnd = source.indexOf('\nasync function openSavedExports()', saveStart);
+  const saveBody = source.slice(saveStart, saveEnd);
+  assert.match(saveBody, /directDownload/);
+  assert.match(saveBody, /requestBlobDownload\(clean,blob\)/);
+  assert.ok(saveBody.indexOf('requestBlobDownload(clean,blob)') < saveBody.indexOf('localExportStore.save(clean,blob)'),
+    'device picker or download must be invoked before IndexedDB awaits');
+  assert.match(saveBody, /\.xlsx\$\/i\.test\(clean\)/);
+});
+
+test('Excel exports use the direct device-delivery path by default, not only the temporary file list', () => {
+  const start = html.indexOf("<script>'use strict';");
+  const source = html.slice(start + '<script>'.length, html.indexOf('</script>', start + '<script>'.length));
+  assert.match(source, /saveBlob\(fname\('خروجی '\+label,'xlsx'\),xlsxBlob\(filtered,label\),\{directDownload:true\}\)/);
+  assert.match(source, /function exportBaseData\(k\)/);
+  assert.match(source, /ACT\.dataExcelExport=/);
+});
+
+test('device-save action uses Android SAF first, Web Share as the mobile-wrapper fallback, then a browser download link', () => {
+  const start = html.indexOf("<script>'use strict';");
+  const source = html.slice(start + '<script>'.length, html.indexOf('</script>', start + '<script>'.length));
+  const begin = source.indexOf('function requestBlobDownload(');
+  const end = source.indexOf('\nasync function saveRecordToDevice', begin);
+  const body = source.slice(begin, end);
+  assert.match(body, /AndroidBridge\.saveFile/);
+  assert.match(body, /window\.showSaveFilePicker/);
+  assert.match(body, /navigator\.share/);
+  assert.match(body, /navigator\.canShare/);
+  assert.match(body, /URL\.createObjectURL/);
+  assert.ok(body.indexOf('navigator.share') < body.indexOf('URL.createObjectURL'),
+    'the Android share sheet must be tried before the last-resort browser download');
+});
+
+test('saved exports remain accessible from the current session when IndexedDB cannot be opened', () => {
+  const start = html.indexOf("<script>'use strict';");
+  const source = html.slice(start + '<script>'.length, html.indexOf('</script>', start + '<script>'.length));
+  const begin = source.indexOf('async function openSavedExports()');
+  const end = source.indexOf('\nACT.savedExports=', begin);
+  const body = source.slice(begin, end);
+  assert.match(body, /exportRecordCache\.values\(\)/);
+  assert.match(body, /localExportStore\.list\(\)/);
+  assert.doesNotMatch(body, /if\(!localExportStore\)return toast\(/);
+});
