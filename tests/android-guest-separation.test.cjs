@@ -63,12 +63,13 @@ test('dedicated guest entry creates a short-lived token and redirects to the app
 test('guest entry has a versioned Supabase config request and a public-key fallback when the config script cannot load', () => {
   const guestPage = fs.readFileSync(path.join(root, 'guest.html'), 'utf8');
   const config = fs.readFileSync(path.join(root, 'supabase-config.js'), 'utf8');
-  assert.match(guestPage, /supabase-config\\.js\\?v=2\\.9\\.7/);
-  assert.match(guestPage, /__MRK_SUPABASE_CONFIG_LOAD_FAILED/);
+  assert.ok(guestPage.includes('supabase-config.js?v=2.9.7'));
+  assert.ok(guestPage.includes('__MRK_SUPABASE_CONFIG_LOAD_FAILED'));
   const configKey = config.match(/publishableKey:'([^']+)'/)?.[1];
-  const fallbackKey = guestPage.match(/const fallback=\\{url:'[^']+',publishableKey:'([^']+)'\\}/)?.[1];
+  const fallbackLine = guestPage.split('\\n').find(line => line.includes('const fallback='));
+  const fallbackKey = fallbackLine?.match(/publishableKey:'([^']+)'/)?.[1];
   assert.ok(configKey, 'published Supabase config must provide a publishable key');
   assert.equal(fallbackKey, configKey, 'guest fallback key must match the active public config key');
-  assert.match(guestPage, /window\\.MRK_SUPABASE=\\{/);
-  assert.match(guestPage, /const ENDPOINT=\\(window\\.MRK_SUPABASE\\?\\.url/);
+  assert.ok(guestPage.includes('window.MRK_SUPABASE={'));
+  assert.ok(guestPage.includes('const ENDPOINT=(window.MRK_SUPABASE?.url||'));
 });
