@@ -824,7 +824,7 @@ async function uploadManagerExportRecord(record){
  if(record.cloudPath)return record;
  if(!window.MRKCloud?.uploadManagerExport)throw new Error('اتصال فضای ذخیره‌سازی مدیر در دسترس نیست');
  const uploaded=await MRKCloud.uploadManagerExport(UI.companyId,record.name,record.blob);
- const patch={cloudBucket:uploaded.bucket||MANAGER_EXPORT_BUCKET,cloudPath:uploaded.path,cloudSavedAt:uploaded.createdAt||new Date().toISOString(),cloudSize:uploaded.size||record.size};
+ const patch={cloudBucket:uploaded.bucket||MANAGER_EXPORT_BUCKET,cloudPath:uploaded.path,cloudSavedAt:uploaded.createdAt||new Date().toISOString(),cloudSize:uploaded.size||record.size,cloudUploadError:''};
  let updated={...record,...patch};
  if(record.persisted&&localExportStore){const saved=await localExportStore.update(record.id,patch);if(saved)updated=saved}
  exportRecordCache.set(String(updated.id),updated);
@@ -967,6 +967,7 @@ function saveBlob(name,blob,options){
    }catch(error){
     record.cloudUploadError=String(error?.message||error);
     exportRecordCache.set(String(record.id),record);
+    if(record.persisted&&localExportStore)try{await localExportStore.update(record.id,{cloudUploadError:record.cloudUploadError})}catch(updateError){}
     toast('نسخه محلی فایل ذخیره شد، اما بارگذاری فضای ابری ناموفق بود: '+record.cloudUploadError);
    }
   }
