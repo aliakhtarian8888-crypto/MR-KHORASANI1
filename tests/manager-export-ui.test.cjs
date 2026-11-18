@@ -76,10 +76,10 @@ test('manager export storage helper is loaded and cached for offline app startup
   assert.match(release, /mrk-manager-export-storage\.js/);
 });
 
-test('backup email address is shown in the backup settings field and the system export UI exposes the private bucket path', () => {
+test('backup email address is shown and the private manager storage address is disclosed', () => {
   const source = appSource();
   assert.ok(source.includes('id="s_mail" dir="ltr" value="${esc(S.email||'));
-  assert.match(source, /فضای ذخیره‌سازی مدیر سیستم/);
-  assert.match(source, /mrk-manager-exports/);
-  assert.match(source, /companyId\}\/exports/);
+  assert.ok(source.includes('فضای ذخیره‌سازی مدیر سیستم'));
+  assert.ok(source.includes('mrk-manager-exports'));
+  assert.ok(source.includes("esc(UI.companyId)+'/exports/"));
 });
