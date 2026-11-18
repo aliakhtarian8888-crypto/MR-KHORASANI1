@@ -57,8 +57,8 @@ test('manager export list supports authenticated cloud list/download/delete and 
   assert.match(body, /localExportStore\.get\(id\)/);
   assert.match(body, /addEventListener\(['"]click['"]/);
   assert.match(body, /data-export-action="cloud-upload"/);
-  assert.match(body, /data-export-action="download-cloud"/);
-  assert.match(body, /data-export-action="delete-cloud"/);
+  assert.match(body, /data-export-action="cloud-download"/);
+  assert.match(body, /data-export-action="cloud-delete"/);
   assert.match(body, /OWNER/);
   assert.match(body, /ADMIN/);
   assert.match(body, /mrk-manager-exports/);
@@ -72,7 +72,7 @@ test('manager export storage helper is loaded and cached for offline app startup
 
 test('backup email address is shown in the backup settings field and the system export UI exposes the private bucket path', () => {
   const source = appSource();
-  assert.match(source, /id="s_mail"[^>]*value="${esc\(S\.email/);
+  assert.match(source, /id="s_mail" dir="ltr" value="${esc\(S\.email/);
   assert.match(source, /فضای ذخیره‌سازی مدیر سیستم/);
   assert.match(source, /mrk-manager-exports/);
   assert.match(source, /companyId\}\/exports/);
