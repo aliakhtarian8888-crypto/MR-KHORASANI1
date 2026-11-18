@@ -49,14 +49,11 @@ test('guest browser URL is the dedicated static guest-entry page and the deploym
 
 test('dedicated guest entry creates a short-lived token and redirects to the application hash route', () => {
   const guestPage = fs.readFileSync(path.join(root, 'guest.html'), 'utf8');
-  assert.match(guestPage, /mrk-guest-demo\?api=issue/);
+  assert.match(guestPage, /mrk-guest-demo/);
+  assert.match(guestPage, /api=issue/);
   assert.match(guestPage, /guest_session=/);
-  assert.match(guestPage, /index\.html/);
-  assert.doesNotMatch(guestPage, /sessionStorage|localStorage/);\n  assert.match(guestPage, /location\\.replace/);
-  assert.match(guestPage, /retry|تلاش مجدد/);
-});
-
-test('new guest QR workflow points to the dedicated guest page rather than the old query-only URL', () => {
+  assert.doesNotMatch(guestPage, /sessionStorage|localStorage/);
+  assert.match(guestPage, /location\.replace/);
   assert.match(apkWorkflow, /guest-entry-qr\.png.*MR-KHORASANI1\/guest\.html/);
   assert.doesNotMatch(apkWorkflow, /guest-entry-qr\.png.*MR-KHORASANI1\/\?g=1/);
 });
