@@ -52,7 +52,7 @@ test('dedicated guest entry creates a short-lived token and redirects to the app
   assert.match(guestPage, /mrk-guest-demo\?api=issue/);
   assert.match(guestPage, /guest_session=/);
   assert.match(guestPage, /index\.html/);
-  assert.match(guestPage, /sessionStorage|sessionStorage/);
+  assert.doesNotMatch(guestPage, /sessionStorage|localStorage/);\n  assert.match(guestPage, /location\\.replace/);
   assert.match(guestPage, /retry|تلاش مجدد/);
 });
 
