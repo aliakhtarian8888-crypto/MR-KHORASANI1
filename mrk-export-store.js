@@ -47,6 +47,14 @@
       async get(id) {
         return (await adapter.get(String(id))) || null;
       },
+      async update(id, patch) {
+        const current = (await adapter.get(String(id))) || null;
+        if (!current) return null;
+        const changes = patch && typeof patch === 'object' ? patch : {};
+        const next = { ...current, ...changes, id: current.id, blob: current.blob };
+        await adapter.put(next);
+        return next;
+      },
       async remove(id) {
         await adapter.delete(String(id));
         return true;
