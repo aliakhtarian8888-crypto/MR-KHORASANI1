@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#081A35">
   <meta name="robots" content="noindex,nofollow">
   <meta name="referrer" content="no-referrer">
+  <meta name="application-version" content="2.9.7-guest-key-fallback">
   <title>ورود مهمان | MR, KHORASANI</title>
   <style>
     :root{color-scheme:dark;font-family:Tahoma,Arial,sans-serif;background:#071326;color:#f4ead2}
@@ -20,7 +21,18 @@
     button:disabled{opacity:.6;cursor:wait}
     small{display:block;margin-top:16px;color:#8495ae;line-height:1.8}
   </style>
-  <script src="supabase-config.js"></script>
+  <script src="./supabase-config.js?v=2.9.7" onerror="window.__MRK_SUPABASE_CONFIG_LOAD_FAILED=true"></script>
+  <script>
+  (function(){
+    'use strict';
+    const fallback={url:'https://klomsegarpfdkhkmoazy.supabase.co',publishableKey:'sb_publishable_bkwQJ96fqM2zd0yu0XQ6LA_QJl2c2RV'};
+    const current=window.MRK_SUPABASE||{};
+    window.MRK_SUPABASE={
+      url:current.url||fallback.url,
+      publishableKey:current.publishableKey||fallback.publishableKey
+    };
+  })();
+  </script>
 </head>
 <body>
   <main>
@@ -34,7 +46,7 @@
   <script>
   (function(){
     'use strict';
-    const ENDPOINT='https://klomsegarpfdkhkmoazy.supabase.co/functions/v1/mrk-guest-demo';
+    const ENDPOINT=(window.MRK_SUPABASE?.url||'https://klomsegarpfdkhkmoazy.supabase.co').replace(/\\/+$/,'')+'/functions/v1/mrk-guest-demo';
     const status=document.getElementById('status');
     const retry=document.getElementById('retry');
     let running=false;
