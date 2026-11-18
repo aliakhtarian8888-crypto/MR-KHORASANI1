@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const root = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
@@ -42,7 +43,11 @@ test('backup email migrates only the known previous defaults to the requested ad
   assert.match(source, /www\.aliakhtarian8888@gmail\.com/);
   assert.match(source, /mrkhorasani@gmail\.com/);
   assert.match(source, /function normalizeBackupEmail/);
-  assert.match(source, /return !current\|\|\['www\\.aliakhtarian8888@gmail\\.com','mrkhorasani@gmail\\.com'\]\.includes\(lower\)\?'mrkhorasani8888@gmail\.com':current/);
+  const normalize = source.match(/function normalizeBackupEmail\\(value\\)\\{[^}]+\\}/)?.[0];
+  assert.ok(normalize, 'backup email migration helper must exist');
+  assert.equal(vm.runInNewContext(normalize + '; normalizeBackupEmail("www.aliakhtarian8888@gmail.com")'), 'mrkhorasani8888@gmail.com');
+  assert.equal(vm.runInNewContext(normalize + '; normalizeBackupEmail("mrkhorasani@gmail.com")'), 'mrkhorasani8888@gmail.com');
+  assert.equal(vm.runInNewContext(normalize + '; normalizeBackupEmail("custom@example.com")'), 'custom@example.com');
 });
 
 test('manager export list supports authenticated cloud list/download/delete and local recovery by id', () => {
@@ -54,13 +59,13 @@ test('manager export list supports authenticated cloud list/download/delete and 
   assert.match(source, /MRKCloud\.listManagerExports/);
   assert.match(source, /MRKCloud\.downloadManagerExport/);
   assert.match(source, /MRKCloud\.deleteManagerExport/);
-  assert.match(body, /localExportStore\.get\(id\)/);
+  assert.match(source, /async function resolveLocalExportRecord\\(id\\)/);
+  assert.match(body, /resolveLocalExportRecord\\(id\\)/);
   assert.match(body, /addEventListener\(['"]click['"]/);
   assert.match(body, /data-export-action="cloud-upload"/);
   assert.match(body, /data-export-action="cloud-download"/);
   assert.match(body, /data-export-action="cloud-delete"/);
-  assert.match(body, /OWNER/);
-  assert.match(body, /ADMIN/);
+  assert.match(source, /'OWNER','ADMIN'/);
   assert.match(body, /mrk-manager-exports/);
 });
 
@@ -72,7 +77,7 @@ test('manager export storage helper is loaded and cached for offline app startup
 
 test('backup email address is shown in the backup settings field and the system export UI exposes the private bucket path', () => {
   const source = appSource();
-  assert.match(source, /id="s_mail" dir="ltr" value="${esc\(S\.email/);
+  assert.ok(source.includes('id="s_mail" dir="ltr" value="${esc(S.email||'));
   assert.match(source, /فضای ذخیره‌سازی مدیر سیستم/);
   assert.match(source, /mrk-manager-exports/);
   assert.match(source, /companyId\}\/exports/);
