@@ -137,14 +137,14 @@ test('admin user report includes guest sessions and a separate guest QR asset',(
  assert.ok(source.includes('guest-entry-qr.png'));
  assert.match(source,/\?g=1/);
 });
-test('QR guest link automatically issues a guest session without a user password',()=>{
- const source=fs.readFileSync(path.join(root,'guest-runtime.js'),'utf8');
- assert.match(source,/autoStartGuest: query\.get\('guest'\) === '1' \|\| query\.get\('g'\) === '1'/);
- const start=html.indexOf("<script>'use strict';");
- const inline=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
- assert.match(inline,/readEntry\(location\)\?\.autoStartGuest/);
+test('QR guest link opens the dedicated auto-issuing guest page without a password',()=>{
+ const page=fs.readFileSync(path.join(root,'guest.html'),'utf8');
+ assert.match(html,/GUEST_BROWSER_URL.*guest\\.html/);
+ assert.match(page,/mrk-guest-demo/);
+ assert.match(page,/api=issue/);
+ assert.match(page,/guest_session=/);
+ assert.match(page,/location\\.replace/);
 });
-
 test('opening balance workbench preserves master names and posts named opening journal lines',()=>{
  const start=html.indexOf("<script>'use strict';");
  const source=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
@@ -174,13 +174,12 @@ test('admin user settings show guest audit records and point to the browser-only
  assert.match(source,/\?g=1/);
 });
 test('guest QR entry automatically starts a short-lived guest session without credentials',()=>{
- const source=fs.readFileSync(path.join(root,'guest-runtime.js'),'utf8');
- assert.match(source,/autoStartGuest: query\.get\('guest'\) === '1' \|\| query\.get\('g'\) === '1'/);
- const start=html.indexOf("<script>'use strict';");
- const inline=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
- assert.match(inline,/readEntry\(location\)\?\.autoStartGuest/);
+ const page=fs.readFileSync(path.join(root,'guest.html'),'utf8');
+ assert.match(page,/mrk-guest-demo/);
+ assert.match(page,/api=issue/);
+ assert.match(page,/guest_session=/);
+ assert.match(page,/location\\.replace/);
 });
-
 test('roles page renders a user-by-section checkbox access matrix and persists individual grants to the company API',()=>{
  const start=html.indexOf("<script>'use strict';");
  const source=html.slice(start+'<script>'.length,html.indexOf('</script>',start+'<script>'.length));
@@ -307,34 +306,28 @@ test('export modal uses readable text on its white background', () => {
 });
 
 
-test('asynchronous guest boot renders a loading state before waiting for the session API', () => {
-  const start = html.indexOf("<script>'use strict';");
-  const source = html.slice(start + '<script>'.length, html.indexOf('</script>', start + '<script>'.length));
-  const begin = source.indexOf('async function startGuest(');
-  const end = source.indexOf('\nACT.openGuestAuto=', begin);
-  const guestBoot = source.slice(begin, end);
-  assert.match(source, /function guestLoadingView\(\)/);
-  assert.match(guestBoot, /guestLoadingView\(\)/);
-  assert.ok(guestBoot.indexOf('guestLoadingView()') < guestBoot.indexOf('await temp.resume()'));
-  assert.match(guestBoot, /catch\(e\)/);
+test('asynchronous guest boot renders loading UI before waiting for session resume', () => {
+  const begin=html.indexOf('async function startGuest(');
+  const end=html.indexOf('ACT.openGuestAuto=',begin);
+  const guestBoot=html.slice(begin,end);
+  assert.match(html,/function guestLoadingView\\(\\)/);
+  assert.match(guestBoot,/guestLoadingView\\(/);
+  assert.ok(guestBoot.indexOf('guestLoadingView(')<guestBoot.indexOf('await temp.resume()'));
+  assert.match(guestBoot,/catch\\(error\\)/);
 });
 
-test('guest boot works without direct access to browser sessionStorage or localStorage', () => {
-  const start = html.indexOf("<script>'use strict';");
-  const source = html.slice(start + '<script>'.length, html.indexOf('</script>', start + '<script>'.length));
-  assert.match(source, /function safeSessionStorage\(\)/);
-  const begin = source.indexOf('async function startGuest(');
-  const end = source.indexOf('\nACT.openGuestAuto=', begin);
-  const guestBoot = source.slice(begin, end);
-  assert.doesNotMatch(guestBoot, /sessionStorage:window\.sessionStorage/);
-  assert.match(guestBoot, /sessionStorage:safeSessionStorage\(\)/);
+test('guest boot safely handles unavailable browser storage', () => {
+  const begin=html.indexOf('async function startGuest(');
+  const end=html.indexOf('ACT.openGuestAuto=',begin);
+  const guestBoot=html.slice(begin,end);
+  assert.match(html,/function safeSessionStorage\\(\\)/);
+  assert.match(guestBoot,/sessionStorage:storage/);
+  assert.doesNotMatch(guestBoot,/sessionStorage:window\\.sessionStorage/);
 });
 
-test('browser boot explicitly handles QR auto-start and awaits guest startup without a false 800ms failure overlay', () => {
-  const start = html.indexOf("<script>'use strict';");
-  const source = html.slice(start + '<script>'.length, html.indexOf('</script>', start + '<script>'.length));
-  assert.match(source, /async function boot\(\)/);
-  assert.match(source, /if\(entry\.autoStartGuest\)[\s\S]{0,500}issueGuestSession/);
-  assert.match(source, /await boot\(\)/);
-  assert.doesNotMatch(source, /محتوای اصلی برنامه رندر نشد/);
+test('browser boot awaits guest start and no longer overlays a false 800ms startup error', () => {
+  assert.match(html,/async function boot\\(\\)/);
+  assert.match(html,/if\\(entry\\.autoStartGuest\\)[\\s\\S]{0,500}issueGuestSession/);
+  assert.match(html,/DOMContentLoaded',async\\(\\)=>/);
+  assert.doesNotMatch(html,/محتوای اصلی برنامه رندر نشد/);
 });
