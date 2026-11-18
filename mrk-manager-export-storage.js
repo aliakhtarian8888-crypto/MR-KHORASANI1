@@ -26,7 +26,7 @@
     const baseUrl = String(opts.url || '').replace(/\/+$/, '');
     const publishableKey = String(opts.publishableKey || '');
     const getSession = opts.getSession;
-    const fetchImpl = opts.fetchImpl || (typeof fetch === 'function' ? fetch.bind(root) : null);
+    const fetchImpl = opts.fetchImpl || (typeof fetch === 'function' ? fetch.bind(globalThis) : null);
     const clock = opts.now || Date.now;
     const idFactory = opts.idFactory || (() => Math.random().toString(36).slice(2, 11));
 
