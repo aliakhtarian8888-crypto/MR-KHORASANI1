@@ -41,7 +41,8 @@ test('backup email migrates only the known previous defaults to the requested ad
   assert.match(source, /mrkhorasani8888@gmail\.com/);
   assert.match(source, /www\.aliakhtarian8888@gmail\.com/);
   assert.match(source, /mrkhorasani@gmail\.com/);
-  assert.match(source, /S\.email=.*mrkhorasani8888@gmail\.com/);
+  assert.match(source, /function normalizeBackupEmail/);
+  assert.match(source, /return !current\|\|\['www\\.aliakhtarian8888@gmail\\.com','mrkhorasani@gmail\\.com'\]\.includes\(lower\)\?'mrkhorasani8888@gmail\.com':current/);
 });
 
 test('manager export list supports authenticated cloud list/download/delete and local recovery by id', () => {
