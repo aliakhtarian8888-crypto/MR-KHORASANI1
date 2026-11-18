@@ -63,7 +63,7 @@ test('manager export list supports authenticated cloud list/download/delete and 
   assert.ok(source.includes('MRKCloud.deleteManagerExport'));
   assert.ok(source.includes('async function resolveLocalExportRecord(id)'));
   assert.ok(body.includes('resolveLocalExportRecord(id)'));
-  assert.ok(body.includes("m.addEventListener('click'"));
+  assert.ok(body.includes('bindSavedExportActionButtons(m,isManager,localRows)'));
   assert.ok(body.includes('data-export-action="cloud-upload"'));
   assert.ok(body.includes('data-export-action="cloud-download"'));
   assert.ok(body.includes('data-export-action="cloud-delete"'));
@@ -106,12 +106,12 @@ test('warehouse inventory report uses the current warehouse quantity for its uni
 
 test('saved-export action buttons receive direct non-bubbling click handlers', () => {
   const source = appSource();
-  assert.match(source, /function bindSavedExportActionButtons\(modal,isManager\)/);
+  assert.match(source, /function bindSavedExportActionButtons\(modal,isManager,localRows\)/);
   assert.match(source, /modal\.querySelectorAll\('\[data-export-action\]'\)/);
   assert.match(source, /button\.addEventListener\('click'/);
   assert.match(source, /event\.stopPropagation\(\)/);
-  assert.match(source, /performSavedExportAction\(button,modal,isManager\)/);
-  assert.match(source, /bindSavedExportActionButtons\(m,isManager\)/);
+  assert.match(source, /performSavedExportAction\(button,modal,isManager,localRows\)/);
+  assert.match(source, /bindSavedExportActionButtons\(m,isManager,localRows\)/);
 });
 
 test('manager saved-export modal provides a real bulk upload action for old local exports', () => {
