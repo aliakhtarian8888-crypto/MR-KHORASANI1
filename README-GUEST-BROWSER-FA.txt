@@ -10,6 +10,6 @@ MR, KHORASANI — بسته ورود مهمان مرورگری نسخه ۲.۹.۶
 - داده‌های آزمایشی در نشست مرورگر جدا نگهداری می‌شوند و وارد دفاتر واقعی شرکت نمی‌شوند.
 
 نشانی ورود مهمان:
-https://aliakhtarian8888-crypto.github.io/MR-KHORASANI1/guest.html?v=2.9.9
+https://aliakhtarian8888-crypto.github.io/MR-KHORASANI1/guest.html?v=2.10.0
 
 برای کاربران سازمانی از نسخه نصب اندروید و حسابی که مدیر سیستم تعریف کرده است استفاده کنید.
