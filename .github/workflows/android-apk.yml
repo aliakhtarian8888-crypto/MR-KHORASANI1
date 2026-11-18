@@ -99,7 +99,7 @@ jobs:
           SITE="$RUNNER_TEMP/site"
           mkdir -p "$SITE/downloads"
           cp index.html guest.html guest-runtime.js supabase-config.js supabase-client.js \
-            warehouse-migration.js mrk-data-tools.js mrk-export-store.js \
+            warehouse-migration.js mrk-data-tools.js mrk-export-store.js mrk-manager-export-storage.js \
             manifest.webmanifest sw.js icon.svg icon-192.png icon-512.png \
             apple-touch-icon.png brand-mr.svg guest-entry-qr.png android-install-qr.png \
             android-install.html .nojekyll "$SITE/"
