@@ -17,30 +17,36 @@ execFileSync('zip', ['-qr', fakeApk, '.'], { cwd: fixtureDir });
 execFileSync(process.env.PYTHON || 'python3', [
   path.join(root, 'scripts', 'package_release_targets.py'), '--output', output, '--apk', fakeApk,
 ], { cwd: root, stdio: 'pipe' });
-const guestZip = path.join(output, 'MR-KHORASANI-GUEST-BROWSER-v2.9.5.zip');
-const androidZip = path.join(output, 'MR-KHORASANI-ANDROID-INSTALL-v2.9.5.zip');
+const guestZip = path.join(output, 'MR-KHORASANI-GUEST-BROWSER-v2.9.6.zip');
+const androidZip = path.join(output, 'MR-KHORASANI-ANDROID-INSTALL-v2.9.6.zip');
 const list = file => execFileSync('unzip', ['-Z1', file], { encoding: 'utf8' }).trim().split(/\r?\n/);
 const read = (file, entry) => execFileSync('unzip', ['-p', file, entry], { encoding: 'utf8' });
 const readBuffer = (file, entry) => execFileSync('unzip', ['-p', file, entry]);
 const pngSize = buffer => ({ width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) });
 test('guest browser ZIP contains PWA, short-lived guest entry flow and only the guest QR', () => {
   const entries = list(guestZip);
-  for (const name of ['index.html', '.nojekyll', 'manifest.webmanifest', 'sw.js', 'guest-runtime.js', 'guest-entry-qr.png', 'README-GUEST-BROWSER-FA.txt']) assert.ok(entries.includes(name), `missing ${name}`);
+  for (const name of ['index.html', 'guest.html', '.nojekyll', 'manifest.webmanifest', 'sw.js', 'guest-runtime.js', 'guest-entry-qr.png', 'README-GUEST-BROWSER-FA.txt']) assert.ok(entries.includes(name), `missing ${name}`);
   assert.ok(!entries.includes('android-install-qr.png'));
   const html = read(guestZip, 'index.html');
   assert.match(html, /GUEST_BROWSER_URL/);
-  assert.match(html, /readEntry\(location\)\?\.autoStartGuest/);
+  const guestPage = read(guestZip, 'guest.html');
+  assert.match(guestPage, /mrk-guest-demo/);
+  assert.match(guestPage, /api=issue/);
+  assert.match(guestPage, /guest_session=/);
+  assert.match(guestPage, /location\.replace/);
+  assert.doesNotMatch(guestPage, /sessionStorage|localStorage/);
+  assert.match(html, /GUEST_BROWSER_URL.*guest\.html/);
   const manifest = JSON.parse(read(guestZip, 'manifest.webmanifest'));
-  assert.equal(manifest.version, '2.9.5');
+  assert.equal(manifest.version, '2.9.6');
 });
 test('Android installer ZIP contains a built APK and only the Android-install QR', () => {
   const entries = list(androidZip);
-  assert.ok(entries.includes('MR-KHORASANI-2.9.5.apk'));
+  assert.ok(entries.includes('MR-KHORASANI-2.9.6.apk'));
   assert.ok(entries.includes('android-install-qr.png'));
   assert.ok(entries.includes('README-ANDROID-INSTALL-FA.txt'));
   assert.ok(!entries.includes('index.html'));
   assert.ok(!entries.includes('guest-entry-qr.png'));
-  const apk = readBuffer(androidZip, 'MR-KHORASANI-2.9.5.apk');
+  const apk = readBuffer(androidZip, 'MR-KHORASANI-2.9.6.apk');
   assert.equal(apk.subarray(0, 2).toString(), 'PK');
 });
 test('the QR images are valid square PNGs', () => {

@@ -1,4 +1,4 @@
-<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#081a35"><meta name="application-version" content="2.9.5-separated-entry"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="MR KHORASANI"><meta name="format-detection" content="telephone=no"><meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://klomsegarpfdkhkmoazy.supabase.co; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'"><title>MR, KHORASANI — حسابداری و مدیریت انبار</title><link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/svg+xml" href="icon.svg"><link rel="apple-touch-icon" href="icon-192.png"><style>:root{--p:#081a35;--p2:#12315d;--a:#d6ad55;--bg:#071326;--ink:#f4ead2;--mut:#b4c0d2;--card:#0d203d;--line:#314563;--bad:#f07870;--good:#d6ad55;--i1:#d6ad55;--i2:#d6ad55;--i3:#d6ad55;--i4:#d6ad55;--i5:#d6ad55;--i6:#d6ad55;--i7:#d6ad55;--i8:#d6ad55}
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#081a35"><meta name="application-version" content="2.9.6-separated-entry"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="MR KHORASANI"><meta name="format-detection" content="telephone=no"><meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://klomsegarpfdkhkmoazy.supabase.co; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'"><title>MR, KHORASANI — حسابداری و مدیریت انبار</title><link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/svg+xml" href="icon.svg"><link rel="apple-touch-icon" href="icon-192.png"><style>:root{--p:#081a35;--p2:#12315d;--a:#d6ad55;--bg:#071326;--ink:#f4ead2;--mut:#b4c0d2;--card:#0d203d;--line:#314563;--bad:#f07870;--good:#d6ad55;--i1:#d6ad55;--i2:#d6ad55;--i3:#d6ad55;--i4:#d6ad55;--i5:#d6ad55;--i6:#d6ad55;--i7:#d6ad55;--i8:#d6ad55}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Noto Naskh Arabic","Noto Sans Arabic",Arial,sans-serif;font-size:15px;line-height:1.7;padding:0 0 calc(70px + env(safe-area-inset-bottom,0px));direction:rtl;padding-top:env(safe-area-inset-top,0px)}
 header{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;position:sticky;top:0;z-index:20;padding:8px 12px 0;border-bottom:3px solid var(--a)}
@@ -1899,7 +1899,7 @@ function settingsPage(){const t=UI.st||'acct';const tabs=[['acct','🧾 حساب
  else if(t==='roles')h+=permissionMatrixPage()
  else if(t==='guest')h+=`<div class="card"><div class="ftitle">ورود مهمان فقط از مرورگر</div><div class="grid2"><div>${guestQrSvg()}</div><div><b>نام کاربر: مهمان</b><div class="hint">با اسکن QR، صفحه مرورگر باز می‌شود و رمز/توکن امن یک‌بارمصرف برای همان نشست به‌صورت خودکار صادر می‌شود. حساب‌های سازمانی و اطلاعات شرکت در دسترس مهمان نیستند.</div><button class="btn pri wide mt" data-a="openGuestAuto">بازکردن لینک ورود مهمان در مرورگر</button></div></div><div class="hint" dir="ltr">${GUEST_BROWSER_URL}</div><div class="hint mt">عملیات مهمان فقط در نشست موقت مرورگر نگهداری می‌شود و به دفاتر واقعی شرکت منتقل نمی‌شود.</div></div>`;
  else if(t==='bak')h+=`<div class="card"><div class="ftitle">پشتیبان‌گیری</div><div class="row"><button class="btn pri" data-a="bakDl">💾 دریافت فایل پشتیبان</button><button class="btn" data-a="bakMail">✉️ ارسال پشتیبان به ایمیل</button><label class="btn filebtn">♻️ بازیابی از فایل<input type="file" data-restore accept=".json,application/json,text/plain,application/octet-stream,*/*"></label></div><label>نشانی ایمیل برای پشتیبان و خروجی‌ها</label><input id="s_mail" dir="ltr" value="${esc(S.email||'') }" onchange="S.email=this.value.trim();save()"><div class="hint">در گوشی با «اشتراک‌گذاری» فایل مستقیم به برنامهٔ ایمیل پیوست می‌شود؛ در غیر این صورت فایل دانلود و پنجرهٔ ایمیل باز می‌شود.</div></div><div class="card"><div class="ftitle">همگام‌سازی ابری امن</div><div class="hint">اتصال از طریق حساب کاربری سازمانی و سطح دسترسی پایگاه داده انجام می‌شود؛ کلید مشترک در برنامه ذخیره نشده است.</div><div class="trow"><span>شرکت فعال</span><b>${esc(S.company||'—')}</b></div><div class="trow"><span>شناسه شرکت</span><b dir="ltr">${esc(UI.companyId||'—')}</b></div><div class="hint" id="syncMsg">${esc(SYNC.msg||'برای ذخیره و دریافت تغییرات از دکمه همگام‌سازی استفاده کنید.')}</div><button class="btn pri mt" data-a="syncSave">🔄 همگام‌سازی اکنون</button><div class="hint">تغییرات پس از ثبت، با نشست احراز هویت‌شده ارسال و نسخه سرور با کنترل تداخل بررسی می‌شود.</div></div>`;
- else h+=`<div class="card"><div class="ftitle">کنترل‌ها</div><label class="chk"><input type="checkbox" ${S.autoPdf!==false?'checked':''} data-a="togPdf"> پس از بستن روز، PDF دفتر روزنامه و دفتر کل همان روز خودکار ذخیره شود</label><div class="trow"><span>شناسهٔ این دستگاه</span><b dir="ltr">${esc(S.dev)}</b></div><div class="trow"><span>آخرین پشتیبان خودکار (بستن روز)</span><b>${S.lastBackup?fa(S.lastBackup):'—'}</b></div><div class="trow"><span>نسخهٔ برنامه</span><b>${fa('2.9.5')}</b></div><div class="hint">توازن سند، قفل روز بسته، حذف منطقی، مسیر حسابرسی و شماره‌گذاری یکتا در هستهٔ برنامه اجباری هستند.</div></div>`;
+ else h+=`<div class="card"><div class="ftitle">کنترل‌ها</div><label class="chk"><input type="checkbox" ${S.autoPdf!==false?'checked':''} data-a="togPdf"> پس از بستن روز، PDF دفتر روزنامه و دفتر کل همان روز خودکار ذخیره شود</label><div class="trow"><span>شناسهٔ این دستگاه</span><b dir="ltr">${esc(S.dev)}</b></div><div class="trow"><span>آخرین پشتیبان خودکار (بستن روز)</span><b>${S.lastBackup?fa(S.lastBackup):'—'}</b></div><div class="trow"><span>نسخهٔ برنامه</span><b>${fa('2.9.6')}</b></div><div class="hint">توازن سند، قفل روز بسته، حذف منطقی، مسیر حسابرسی و شماره‌گذاری یکتا در هستهٔ برنامه اجباری هستند.</div></div>`;
  return h}
 
 function persistSettings(section,patch,label){const before=clone(settingsOf());S.settings=settingsOf();S.settings[section]={...S.settings[section],...patch};S.setMt=Date.now();audit('تغییر تنظیمات',label||section,section,before[section],S.settings[section]);save();B=index(build(S));render();toast('تنظیمات ذخیره شد')}
@@ -1970,12 +1970,127 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='l_pas
 /* ---------- قفل نصب ---------- */
 const h53=(str,seed=0)=>{let h1=0xdeadbeef^seed,h2=0x41c6ce57^seed;for(let i=0,ch;i<str.length;i++){ch=str.charCodeAt(i);h1=Math.imul(h1^ch,2654435761);h2=Math.imul(h2^ch,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return 4294967296*(2097151&h2)+(h1>>>0)};
 const DEFAULT_SYNC='';
-const GUEST_BROWSER_URL='https://aliakhtarian8888-crypto.github.io/MR-KHORASANI1/?g=1';
+const GUEST_BROWSER_URL='https://aliakhtarian8888-crypto.github.io/MR-KHORASANI1/guest.html';
 function guestQrSvg(){return '<img src="guest-entry-qr.png" alt="QR ورود مرورگری مهمان" width="176" height="176" style="display:block;max-width:100%;height:auto;background:#fff;padding:8px;border-radius:10px">'}
 const GUEST_DEMO_URL='https://klomsegarpfdkhkmoazy.supabase.co/functions/v1/mrk-guest-demo';
 function guestEndedView(){return `<div class="login"><div class="lcard">${logoSvg(0,96)}<h1>نشست مهمان پایان یافت</h1><p>اطلاعات آزمایشی این نشست پاک شده است. برای شروع یک محیط تازه، QR را دوباره اسکن کنید.</p><button class="btn pri wide" data-a="retryGuest">بازگشت به صفحه ورود مهمان</button></div></div>`}
-ACT.retryGuest=()=>location.replace('./');
-async function startGuest(entryToken){if(isNativeAndroidApp()){start();return}if(!window.MRKGuest){$('#app').innerHTML='<div class="login">ماژول نشست مهمان بارگذاری نشد.</div>';return}const cfg=window.MRKCloud?.CONFIG||{};const temp=MRKGuest.create({sessionStorage:window.sessionStorage,endpoint:GUEST_DEMO_URL,publishableKey:cfg.publishableKey,token:entryToken||''});let saved=null;try{saved=temp.readSavedSession();temp.purgeStoredBusinessData()}catch(e){}const token=entryToken||saved?.token||'';if(!token){$('#app').innerHTML=guestEndedView();return}if(entryToken&&saved?.token&&saved.token!==entryToken){temp.setToken(saved.token);await Promise.race([temp.logout('replaced'),new Promise(r=>setTimeout(r,1000))]).catch(()=>{});temp.clearAll()}temp.setToken(token);try{const response=await temp.resume();const meta=response.session;if(!meta?.id)throw new Error('اطلاعات نشست مهمان نامعتبر است');const g=MRKGuest.create({sessionStorage:window.sessionStorage,endpoint:GUEST_DEMO_URL,publishableKey:cfg.publishableKey,token,sessionId:meta.id});g.setToken(token);g.saveSession({expiresAt:Date.parse(meta.expires_at)});if(entryToken){try{history.replaceState(null,'',MRKGuest.readEntry(location).cleanUrl||location.pathname)}catch(e){}}UI.guestMode=true;UI.guestLoggedOut=false;UI.guestSession=g;UI.guestSessionId=meta.id;UI.companyId=null;UI.readOnly=false;UI.user={id:'guest:'+meta.id,name:'مهمان',role:'مدیر سیستم',permissions:defRoles()['مدیر سیستم']};UI.page='dash';UI.guestLastPage=null;UI.guestPageStartedAt=0;const restored=g.loadState();const isRestorable=!!(restored&&typeof restored==='object'&&restored.guestWorkspaceVersion===1&&restored.company==='محیط آزمایشی MR,KHORASANI');if(isRestorable){S=restored}else{g.clearState();S=fresh();applyWorkbookMasterSeed(S);S.company='محیط آزمایشی MR,KHORASANI';S.parties=(S.parties||[]).map((x,i)=>({...x,name:(x.kind||'شخص')+' نمونه '+(i+1),phone:'',addr:'',email:'',nationalId:''}));S.ops=Array.isArray(S.ops)?S.ops:[];S.audit=[];S.users=Array.isArray(S.users)?S.users:[];S.days=S.days||{};S.archive=S.archive||{};S.email='';S.syncKey='';S.syncUrl='';S.syncVer=null;S.dirty=false;S.dev='GUEST-'+String(meta.id).slice(0,8);S.tomb=S.tomb||[]}S.guestWorkspaceVersion=1;S.users=Array.isArray(S.users)?S.users:[];migrate();S.users=Array.isArray(S.users)?S.users:[];UI.remoteUsers=S.users.map(x=>({...x}));B=index(build(S));UI.wd=today().slice(0,4)==String(S.fy)?today():S.fy+'/01/01';save();applyTheme();render();if(UI.guestHeartbeat)clearInterval(UI.guestHeartbeat);UI.guestHeartbeat=setInterval(async()=>{if(!UI.guestMode||document.hidden)return;try{const h=await g.heartbeat();if(h.expires_at)g.saveSession({expiresAt:Date.parse(h.expires_at)})}catch(e){const m=String(e?.message||'');if(!navigator.onLine||/Failed to fetch|NetworkError|Load failed|ERR_INTERNET_DISCONNECTED/i.test(m))return;if(!/401|نشست مهمان معتبر نیست|منقضی|نشست پایان یافته/i.test(m))return;if(UI.guestHeartbeat)clearInterval(UI.guestHeartbeat);g.clearAll();UI.guestMode=false;UI.guestSession=null;UI.guestSessionId=null;UI.guestLastPage=null;UI.guestLoggedOut=true;UI.user=null;S=null;B=null;render() }},45000)}catch(e){temp.clearAll();S=null;B=null;$('#app').innerHTML='<div class="login"><div class="lcard"><h2>ورود مهمان انجام نشد</h2><p>'+esc(e.message||'نشست معتبر نیست')+'</p><button class="btn pri wide" data-a="retryGuest">اسکن دوباره / شروع مجدد</button></div></div>'}}
+ACT.retryGuest=()=>location.replace('guest.html');
+function safeSessionStorage(){
+ try{
+  const storage=window.sessionStorage;
+  const probe='__mrk_guest_probe__';
+  storage.setItem(probe,'1');storage.removeItem(probe);
+  return storage;
+ }catch(error){return null}
+}
+function hideBootFallback(){
+ const fallback=document.getElementById('boot-fallback');
+ if(fallback)fallback.style.display='none';
+}
+function guestLoadingView(message){
+ return '<div class="login"><div class="lcard">'+logoSvg(0,96)+'<h1>ورود مهمان</h1><p>'+esc(message||'در حال برقراری نشست امن مهمان…')+'</p><div class="hint mt">درخواست در حال ارسال به سرویس امن سامانه است. این صفحه را نبندید.</div></div></div>';
+}
+function guestErrorView(error){
+ const message=String(error?.message||error||'خطای نامشخص');
+ return '<div class="login"><div class="lcard">'+logoSvg(0,96)+'<h1>ورود مهمان انجام نشد</h1><p>'+esc(message)+'</p><p>اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.</p><button class="btn pri wide" data-a="retryGuest">تلاش مجدد برای ورود مهمان</button></div></div>';
+}
+async function issueGuestSession(button,status){
+ const control=button||null;
+ const statusNode=status||$('#guestStatus');
+ if(control)control.disabled=true;
+ if(statusNode)statusNode.textContent='در حال ایجاد نشست امن مهمان…';
+ try{
+  const config=window.MRK_SUPABASE||{};
+  if(!config.url||!config.publishableKey)throw new Error('تنظیمات اتصال سرویس مهمان بارگذاری نشده است.');
+  if(!window.crypto||typeof crypto.getRandomValues!=='function')throw new Error('مرورگر امکان تولید شناسه امن برای نشست را فراهم نکرده است.');
+  const headers={'Content-Type':'application/json','apikey':config.publishableKey};
+  const bytes=new Uint8Array(12);crypto.getRandomValues(bytes);
+  const deviceId=[...bytes].map(x=>x.toString(16).padStart(2,'0')).join('');
+  const response=await fetch(GUEST_DEMO_URL+'?api=issue',{method:'POST',headers,body:JSON.stringify({action:'issue',device_id:deviceId}),cache:'no-store'});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||!data.token)throw new Error(data.error||('ایجاد نشست مهمان ناموفق بود ('+response.status+')'));
+  const token=String(data.token);
+  if(token.length<32)throw new Error('پاسخ سرویس، توکن معتبر مهمان ندارد.');
+  const target=new URL('index.html',location.href);
+  target.hash='guest_session='+encodeURIComponent(token);
+  location.replace(target.toString());
+  return true;
+ }catch(error){
+  if(statusNode)statusNode.textContent=error?.message||'خطا در ایجاد نشست مهمان';
+  if(control)control.disabled=false;
+  return false;
+ }
+}
+async function startGuest(entryToken){
+ if(isNativeAndroidApp()){start();return}
+ const app=$('#app');
+ if(app)app.innerHTML=guestLoadingView('در حال بررسی اعتبار نشست مهمان…');
+ hideBootFallback();
+ if(!window.MRKGuest){
+  if(app)app.innerHTML=guestErrorView('ماژول نشست مهمان بارگذاری نشد.');
+  return;
+ }
+ const storage=safeSessionStorage();
+ const cfg=window.MRKCloud?.CONFIG||{};
+ const temp=MRKGuest.create({sessionStorage:storage,endpoint:GUEST_DEMO_URL,publishableKey:cfg.publishableKey,token:entryToken||''});
+ let saved=null;
+ try{saved=temp.readSavedSession();temp.purgeStoredBusinessData()}catch(error){}
+ const token=entryToken||saved?.token||'';
+ if(!token){
+  if(app)app.innerHTML=guestErrorView('توکن ورود مهمان پیدا نشد. QR مهمان را دوباره اسکن کنید.');
+  return;
+ }
+ if(entryToken&&saved?.token&&saved.token!==entryToken){
+  temp.setToken(saved.token);
+  await Promise.race([temp.logout('replaced'),new Promise(resolve=>setTimeout(resolve,1000))]).catch(()=>{});
+  temp.clearAll();
+ }
+ temp.setToken(token);
+ try{
+  const response=await temp.resume();
+  const meta=response.session;
+  if(!meta?.id)throw new Error('اطلاعات نشست مهمان نامعتبر است.');
+  const g=MRKGuest.create({sessionStorage:storage,endpoint:GUEST_DEMO_URL,publishableKey:cfg.publishableKey,token,sessionId:meta.id});
+  g.setToken(token);
+  g.saveSession({expiresAt:Date.parse(meta.expires_at)});
+  if(entryToken&&storage){
+   try{history.replaceState(null,'',MRKGuest.readEntry(location).cleanUrl||location.pathname)}catch(error){}
+  }
+  UI.guestMode=true;UI.guestLoggedOut=false;UI.guestSession=g;UI.guestSessionId=meta.id;UI.companyId=null;UI.readOnly=false;
+  UI.user={id:'guest:'+meta.id,name:'مهمان',role:'مدیر سیستم',permissions:defRoles()['مدیر سیستم']};
+  UI.page='dash';UI.guestLastPage=null;UI.guestPageStartedAt=0;
+  const restored=g.loadState();
+  const isRestorable=!!(restored&&typeof restored==='object'&&restored.guestWorkspaceVersion===1&&restored.company==='محیط آزمایشی MR,KHORASANI');
+  if(isRestorable){S=restored}else{
+   g.clearState();S=fresh();applyWorkbookMasterSeed(S);S.company='محیط آزمایشی MR,KHORASANI';
+   S.parties=(S.parties||[]).map((x,i)=>({...x,name:(x.kind||'شخص')+' نمونه '+(i+1),phone:'',addr:'',email:'',nationalId:''}));
+   S.ops=Array.isArray(S.ops)?S.ops:[];S.audit=[];S.users=Array.isArray(S.users)?S.users:[];
+   S.days=S.days||{};S.archive=S.archive||{};S.email='';S.syncKey='';S.syncUrl='';S.syncVer=null;S.dirty=false;
+   S.dev='GUEST-'+String(meta.id).slice(0,8);S.tomb=S.tomb||[];
+  }
+  S.guestWorkspaceVersion=1;S.users=Array.isArray(S.users)?S.users:[];
+  migrate();S.users=Array.isArray(S.users)?S.users:[];
+  UI.remoteUsers=S.users.map(x=>({...x}));
+  B=index(build(S));UI.wd=today().slice(0,4)==String(S.fy)?today():S.fy+'/01/01';
+  save();applyTheme();render();hideBootFallback();
+  if(UI.guestHeartbeat)clearInterval(UI.guestHeartbeat);
+  UI.guestHeartbeat=setInterval(async()=>{
+   if(!UI.guestMode||document.hidden)return;
+   try{const h=await g.heartbeat();if(h.expires_at)g.saveSession({expiresAt:Date.parse(h.expires_at)})}
+   catch(error){
+    const message=String(error?.message||'');
+    if(!navigator.onLine||/Failed to fetch|NetworkError|Load failed|ERR_INTERNET_DISCONNECTED/i.test(message))return;
+    if(!/401|نشست مهمان معتبر نیست|منقضی|نشست پایان یافته/i.test(message))return;
+    if(UI.guestHeartbeat)clearInterval(UI.guestHeartbeat);
+    g.clearAll();UI.guestMode=false;UI.guestSession=null;UI.guestSessionId=null;UI.guestLastPage=null;UI.guestLoggedOut=true;UI.user=null;S=null;B=null;render();
+   }
+  },45000);
+ }catch(error){
+  temp.clearAll();S=null;B=null;UI.guestMode=false;UI.guestSession=null;UI.user=null;
+  if(app)app.innerHTML=guestErrorView(error);
+  hideBootFallback();
+ }
+}
 ACT.openGuestAuto=()=>{const w=window.open(GUEST_BROWSER_URL,'_blank','noopener');if(!w)toast('مرورگر اجازه بازکردن صفحه را نداد؛ لینک QR را کپی کنید')};
 ACT.openGuestDemo=()=>{const w=window.open(GUEST_BROWSER_URL,'_blank','noopener');if(!w)toast('مرورگر اجازه بازکردن صفحه را نداد؛ نشانی را از همین بخش کپی کنید')};
 ACT.copyGuestDemo=async()=>{const ok=await copyText(GUEST_BROWSER_URL);toast(ok?'نشانی عمومی کپی شد':'کپی خودکار ممکن نشد؛ نشانی را دستی کپی کنید')};
@@ -1986,7 +2101,13 @@ const cleanUrl=v=>en(String(v||'')).replace(/[\s\u200c\u200b\u200e\u200f]/g,'').
 const LOCKH=2687470673299596;
 function lockView(){return `<div class="login"><div class="lcard">${logoSvg(0,96)}<h1>فعال‌سازی نسخه</h1><p>این نسخه روی دستگاه جدید قفل است. رمز فعال‌سازی را دو بار وارد کنید.</p><label>رمز فعال‌سازی</label><input id="k1" type="password" inputmode="numeric" autocomplete="off"><label>تکرار رمز</label><input id="k2" type="password" inputmode="numeric" autocomplete="off"><button class="btn pri wide" data-a="doUnlock">تأیید و فعال‌سازی</button></div></div>`}
 function guestWelcomeView(){return `<div class="login"><div class="lcard">${logoSvg(0,96)}<h1>MR, KHORASANI</h1><p>نسخه وب قابل نصب · محیط حسابداری آزمایشی مهمان</p><div class="hint">نام کاربر مهمان است و با هر اسکن QR یک رمز/توکن تصادفی یک‌بارمصرف برای همان نشست صادر می‌شود. عملیات مهمان فقط در حافظه موقت مرورگر می‌ماند و وارد دفاتر اصلی شرکت نمی‌شود.</div><button class="btn pri wide" id="guestStart">ایجاد نشست مهمان و ورود به برنامه</button><button class="btn wide" id="pwaInstall" style="display:none">نصب برنامه روی دستگاه</button><div id="guestStatus" class="hint mt" role="status"></div><div class="card mt"><b>نصب روی دستگاه</b><div class="hint">Android و دسکتاپ: از منوی مرورگر «Install app / نصب برنامه» را انتخاب کنید. iPhone و iPad: در Safari گزینه Share و سپس Add to Home Screen را بزنید. این نسخه PWA است؛ فایل APK فقط برای Android کاربرد دارد.</div></div></div></div>`}
-async function bindGuestWelcome(){const install=$('#pwaInstall');if(install)install.addEventListener('click',()=>promptInstallPwa());const button=$('#guestStart');if(!button)return;button.addEventListener('click',async()=>{const status=$('#guestStatus');button.disabled=true;if(status)status.textContent='در حال ایجاد نشست امن مهمان…';try{const config=window.MRK_SUPABASE||{};const headers={'Content-Type':'application/json'};if(config.publishableKey)headers.apikey=config.publishableKey;const bytes=new Uint8Array(12);crypto.getRandomValues(bytes);const deviceId=[...bytes].map(x=>x.toString(16).padStart(2,'0')).join('');const response=await fetch(GUEST_DEMO_URL+'?api=issue',{method:'POST',headers,body:JSON.stringify({action:'issue',device_id:deviceId})});const data=await response.json().catch(()=>({}));if(!response.ok||!data.token)throw new Error(data.error||'ایجاد نشست مهمان ناموفق بود');location.replace(location.pathname+location.search+'#guest_session='+encodeURIComponent(data.token))}catch(e){if(status)status.textContent=e.message||'خطا در ایجاد نشست';button.disabled=false}});if(window.MRKGuest?.readEntry(location)?.autoStartGuest)setTimeout(()=>button.click(),0)}
+async function bindGuestWelcome(){
+ const install=$('#pwaInstall');
+ if(install)install.addEventListener('click',()=>promptInstallPwa());
+ const button=$('#guestStart');
+ if(!button)return;
+ button.addEventListener('click',()=>issueGuestSession(button,$('#guestStatus')));
+}
 ACT.doUnlock=()=>{const a=en($('#k1').value).trim(),b=en($('#k2').value).trim();if(a!==b)return toast('دو رمز یکسان نیستند');if(h53('khorasani|'+a)!==LOCKH)return toast('رمز فعال‌سازی صحیح نیست');try{localStorage.setItem('mrk_act','1')}catch(e){}start()};
 function migrate(){
  if(window.MRKWarehouseMigration?.normalizeState)S=window.MRKWarehouseMigration.normalizeState(S,DEFAULT_WAREHOUSES);
@@ -2031,24 +2152,36 @@ function applyWorkbookMasterSeed(st){
 }
 function start(){S=load()||fresh();applyWorkbookMasterSeed(S);delete S.syncKey;S.syncUrl='';S.syncVer=null;S.email=S.email||'www.aliakhtarian8888@gmail.com';S.tomb=S.tomb||[];migrate();S.users=[];S.accounts=S.accounts||[];COA.forEach(([c,n])=>{if(!S.accounts.some(a=>a.code===c))S.accounts.push({code:c,name:n})});warehouseList().forEach(w=>{if(!S.accounts.some(a=>a.code===w.acc))S.accounts.push({code:w.acc,name:'موجودی کالا – '+w.name})});S.taf=Object.assign({},TAF0,S.taf||{});S.dev=S.dev||'D'+Math.random().toString(36).slice(2,8);B=index(build(S));save();UI.wd=today().slice(0,4)==String(S.fy)?today():S.fy+'/01/01';applyTheme();render()}
 let deferredInstallPrompt=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;const b=$('#pwaInstall');if(b)b.style.display='block'});async function promptInstallPwa(){if(!deferredInstallPrompt)return false;deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;deferredInstallPrompt=null;const b=$('#pwaInstall');if(b)b.style.display='none';return true}
-function boot(){if(isNativeAndroidApp()){try{window.MRKGuest?.create({sessionStorage:window.sessionStorage}).clearAll()}catch(e){}start();return}const entry=window.MRKGuest?.readEntry(location)||{isGuestEntry:false,token:''};let saved=null;try{saved=window.MRKGuest?.create({sessionStorage:window.sessionStorage}).readSavedSession()||null}catch(e){}if(entry.isGuestEntry||saved?.token){startGuest(entry.token||saved.token);return}let act=false;try{act=localStorage.getItem('mrk_act')==='1'}catch(e){}if(!act){applyThemeDefault();$('#app').innerHTML=guestWelcomeView();bindGuestWelcome();return}start()}
+async function boot(){
+ if(isNativeAndroidApp()){
+  try{window.MRKGuest?.create({sessionStorage:safeSessionStorage()}).clearAll()}catch(error){}
+  start();return;
+ }
+ const entry=window.MRKGuest?.readEntry(location)||{isGuestEntry:false,token:'',autoStartGuest:false};
+ const storage=safeSessionStorage();
+ let saved=null;
+ try{saved=window.MRKGuest?.create({sessionStorage:storage}).readSavedSession()||null}catch(error){}
+ if(entry.isGuestEntry||saved?.token){await startGuest(entry.token||saved.token);return}
+ if(entry.autoStartGuest){
+  const app=$('#app');if(app)app.innerHTML=guestLoadingView('در حال ایجاد نشست جدید مهمان…');
+  hideBootFallback();await issueGuestSession();return;
+ }
+ let act=false;try{act=localStorage.getItem('mrk_act')==='1'}catch(error){}
+ if(!act){applyThemeDefault();$('#app').innerHTML=guestWelcomeView();hideBootFallback();bindGuestWelcome();return}
+ start();
+}
 function applyThemeDefault(){const t=THEMES[0],r=document.documentElement.style;r.setProperty('--p',t.p);r.setProperty('--p2',t.p2);r.setProperty('--a',t.a);r.setProperty('--bg',t.bg);t.ic.forEach((c,i)=>r.setProperty('--i'+(i+1),c))}
-window.addEventListener('DOMContentLoaded',()=>{
-  try{
-    boot();
-    // اگر boot بدون خطا اجرا شد و محتوایی در #app قرار گرفت، fallback را مخفی کن
-    setTimeout(function(){
-      var app = document.getElementById('app');
-      var fb = document.getElementById('boot-fallback');
-      if(app && app.innerHTML && app.innerHTML.trim().length > 20 && fb){
-        fb.style.display = 'none';
-      } else if(fb && (!app || !app.innerHTML || app.innerHTML.trim().length < 10)){
-        window.__mrkBootError('راه‌اندازی ناقص', 'محتوای اصلی برنامه رندر نشد. ممکن است فایل‌های JS یا localStorage در دسترس نباشد.');
-      }
-    }, 800);
-  }catch(e){
-    window.__mrkBootError('خطا در boot()', (e && e.message) || String(e));
-  }
+window.addEventListener('DOMContentLoaded',async()=>{
+ try{await boot()}
+ catch(error){
+  window.__mrkBootError('خطا در راه‌اندازی سامانه',(error&&error.message)||String(error));
+  const app=document.getElementById('app');
+  if(app&&app.innerHTML.trim().length<10)app.innerHTML=guestErrorView(error);
+ }
+ finally{
+  const app=document.getElementById('app');
+  if(app&&app.innerHTML&&app.innerHTML.trim().length>10)hideBootFallback();
+ }
 });
 document.addEventListener('input',e=>{const t=e.target;if(t.dataset&&t.dataset.date==='cd'){}});
 
