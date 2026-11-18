@@ -1088,6 +1088,21 @@ function bindSavedExportActionButtons(modal,isManager,localRows){
    event.preventDefault();
    event.stopPropagation();
    if(button.disabled)return;
+   const action=button.dataset.exportAction,id=button.dataset.exportId;
+   if(action==='download'||action==='share'){
+    const record=exportRecordCache.get(String(id))||(Array.isArray(localRows)?localRows.find(row=>String(row.id)===String(id)):null);
+    if(record?.blob){
+     button.disabled=true;
+     try{
+      const result=action==='download'?saveRecordToDevice(record):shareExportRecord(record);
+      Promise.resolve(result).catch(error=>toast('انتقال فایل ناموفق بود: '+(error?.message||''))).finally(()=>{if(button.isConnected)button.disabled=false});
+     }catch(error){
+      button.disabled=false;
+      toast('انتقال فایل ناموفق بود: '+(error?.message||'خطای نامشخص'));
+     }
+     return;
+    }
+   }
    performSavedExportAction(button,modal,isManager,localRows);
   });
  });
