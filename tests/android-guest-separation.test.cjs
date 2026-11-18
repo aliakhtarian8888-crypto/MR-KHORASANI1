@@ -66,7 +66,7 @@ test('guest entry has a versioned Supabase config request and a public-key fallb
   assert.ok(guestPage.includes('supabase-config.js?v=2.9.7'));
   assert.ok(guestPage.includes('__MRK_SUPABASE_CONFIG_LOAD_FAILED'));
   const configKey = config.match(/publishableKey:'([^']+)'/)?.[1];
-  const fallbackLine = guestPage.split('\\n').find(line => line.includes('const fallback='));
+  const fallbackLine = guestPage.split(String.fromCharCode(10)).find(line => line.includes('const fallback='));
   const fallbackKey = fallbackLine?.match(/publishableKey:'([^']+)'/)?.[1];
   assert.ok(configKey, 'published Supabase config must provide a publishable key');
   assert.equal(fallbackKey, configKey, 'guest fallback key must match the active public config key');
