@@ -103,3 +103,22 @@ test('rejects invalid input and formats stored file sizes', async () => {
   assert.equal(formatBytes(100), '100 بایت');
   assert.equal(formatBytes(2048), '2.0 کیلوبایت');
 });
+
+
+test('updates stored export metadata without replacing its original file blob', async () => {
+  const adapter = createIndexedDBAdapter(fakeIndexedDB(), 'update-exports', 'files');
+  const store = createExportStore(adapter, { idFactory: () => 'file-cloud-1', now: () => 200 });
+  const blob = new Blob(['source-file'], { type: 'application/json' });
+  const saved = await store.save('backup.json', blob);
+  const updated = await store.update(saved.id, {
+    cloudBucket: 'mrk-manager-exports',
+    cloudPath: '11111111-2222-4333-8444-555555555555/exports/200_file-cloud-1_backup.json',
+    cloudSavedAt: '2026-11-18T12:00:00.000Z'
+  });
+  assert.equal(updated.cloudBucket, 'mrk-manager-exports');
+  assert.equal(await updated.blob.text(), 'source-file');
+  const loaded = await store.get(saved.id);
+  assert.equal(loaded.cloudPath, updated.cloudPath);
+  assert.equal(await loaded.blob.text(), 'source-file');
+  assert.equal(await store.update('missing-id', { cloudPath: 'ignored' }), null);
+});
