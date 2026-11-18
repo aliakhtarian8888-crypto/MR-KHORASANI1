@@ -9,6 +9,7 @@ const root = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 const release = fs.readFileSync(path.join(root, 'scripts', 'package_release_targets.py'), 'utf8');
+const workflow = fs.readFileSync(path.join(root, '.github', 'workflows', 'android-apk.yml'), 'utf8');
 
 function appSource() {
   const start = html.indexOf("<script>'use strict';");
