@@ -1064,7 +1064,7 @@ async function openSavedExports(){
     }
     if(action==='delete'){
      if(!confirm('نسخه محلی این فایل از حافظه همین دستگاه حذف شود؟ نسخه ابری احتمالی حذف نخواهد شد.'))return;
-     if(record=await resolveLocalExportRecord(id)){
+     const record=await resolveLocalExportRecord(id);if(record){
       if(record.persisted&&localExportStore)await localExportStore.remove(id);
       exportRecordCache.delete(String(id));
      }
