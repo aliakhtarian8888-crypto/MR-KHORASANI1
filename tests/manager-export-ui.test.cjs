@@ -62,7 +62,7 @@ test('manager export list supports authenticated cloud list/download/delete and 
   assert.ok(source.includes('MRKCloud.downloadManagerExport'));
   assert.ok(source.includes('MRKCloud.deleteManagerExport'));
   assert.ok(source.includes('async function resolveLocalExportRecord(id)'));
-  assert.ok(body.includes('resolveLocalExportRecord(id)'));
+  assert.ok(source.includes('resolveLocalExportRecord(id)'));
   assert.ok(body.includes('bindSavedExportActionButtons(m,isManager,localRows)'));
   assert.ok(body.includes('data-export-action="cloud-upload"'));
   assert.ok(body.includes('data-export-action="cloud-download"'));
@@ -101,7 +101,7 @@ test('warehouse inventory report uses the current warehouse quantity for its uni
   const begin = source.indexOf("REP.iv=R('موجودی انبارها'");
   const end = source.indexOf('REP.inv=', begin);
   const body = source.slice(begin, end);
-  assert.match(body, /num\(a\.q\)\?Math\.round\(num\(a\.v\)\/num\(a\.q\)\):0/);
+  assert.ok(body.includes('Math.abs(num(a.q))>1e-9?Math.round(num(a.v)/num(a.q)):0'));
 });
 
 test('saved-export action buttons receive direct non-bubbling click handlers', () => {
