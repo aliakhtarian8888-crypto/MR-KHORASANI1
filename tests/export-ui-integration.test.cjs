@@ -12,7 +12,7 @@ const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 test('browser export store is loaded before the accounting application script and cached offline', () => {
   assert.match(html, /<script src="mrk-export-store\.js"><\/script><script>'use strict';/);
   assert.match(sw, /mrk-export-store\.js/);
-  assert.match(sw, /2\.9\.8-separated-entry/);
+  assert.match(sw, /2\.9\.9-separated-entry/);
 });
 
 test('the complete inline accounting application script parses as valid JavaScript', () => {
