@@ -93,7 +93,7 @@ test('manager export storage rejects missing sessions and paths outside the sele
     getSession: async () => null,
     fetchImpl: async () => { calls++; return response({}); }
   });
-  await assert.rejects(missingSession.list(COMPANY), /وارد حساب مدیریتی شوید/);
+  await assert.rejects(missingSession.list(COMPANY), /با حساب مدیریتی وارد شوید/);
   const storage = createManagerExportStorage({
     url: 'https://project.supabase.co',
     publishableKey: 'public-key',
