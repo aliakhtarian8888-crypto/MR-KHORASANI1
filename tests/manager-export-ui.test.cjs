@@ -67,7 +67,7 @@ test('manager export list supports authenticated cloud list/download/delete and 
   assert.ok(body.includes('data-export-action="cloud-download"'));
   assert.ok(body.includes('data-export-action="cloud-delete"'));
   assert.ok(source.includes("['OWNER','ADMIN']"));
-  assert.ok(body.includes('mrk-manager-exports'));
+  assert.ok(source.includes("const MANAGER_EXPORT_BUCKET='mrk-manager-exports'"));
 });
 
 test('manager export storage helper is loaded and cached for offline app startup', () => {
