@@ -62,8 +62,8 @@ test('manager export list supports authenticated cloud list/download/delete and 
   assert.ok(source.includes('MRKCloud.downloadManagerExport'));
   assert.ok(source.includes('MRKCloud.deleteManagerExport'));
   assert.ok(source.includes('async function resolveLocalExportRecord(id)'));
-  assert.ok(body.includes('resolveLocalExportRecord(id)'));
-  assert.ok(body.includes("m.addEventListener('click'"));
+  assert.ok(source.includes('resolveLocalExportRecord(id)'));
+  assert.ok(body.includes('bindSavedExportActionButtons(m,isManager,localRows)'));
   assert.ok(body.includes('data-export-action="cloud-upload"'));
   assert.ok(body.includes('data-export-action="cloud-download"'));
   assert.ok(body.includes('data-export-action="cloud-delete"'));
@@ -83,4 +83,45 @@ test('backup email address is shown and the private manager storage address is d
   assert.ok(source.includes('فضای ذخیره‌سازی مدیر سیستم'));
   assert.ok(source.includes('mrk-manager-exports'));
   assert.ok(source.includes("esc(UI.companyId)+'/exports/"));
+});
+
+
+test('transaction item stock details show only non-zero warehouses and preserve the total across every warehouse', () => {
+  const source = appSource();
+  const begin = source.indexOf('function stockTxt(g)');
+  const end = source.indexOf('function stockValueOf', begin);
+  const body = source.slice(begin, end);
+  assert.match(body, /warehouseList\(\)\.filter\(w=>Math\.abs\(num\(stockOf\(g,w\.id\)\)\)>1e-9\)/);
+  assert.match(body, /بدون موجودی در هیچ انباری/);
+  assert.match(body, /warehouseList\(\)\.reduce\(\(sum,w\)=>sum\+stockOf\(g,w\.id\),0\)/);
+});
+
+test('warehouse inventory report uses the current warehouse quantity for its unit cost', () => {
+  const source = appSource();
+  const begin = source.indexOf("REP.iv=R('موجودی انبارها'");
+  const end = source.indexOf('REP.inv=', begin);
+  const body = source.slice(begin, end);
+  assert.ok(body.includes('Math.abs(num(a.q))>1e-9?Math.round(num(a.v)/num(a.q)):0'));
+});
+
+test('saved-export action buttons receive direct non-bubbling click handlers', () => {
+  const source = appSource();
+  assert.match(source, /function bindSavedExportActionButtons\(modal,isManager,localRows\)/);
+  assert.match(source, /modal\.querySelectorAll\('\[data-export-action\]'\)/);
+  assert.match(source, /button\.addEventListener\('click'/);
+  assert.match(source, /event\.stopPropagation\(\)/);
+  assert.match(source, /performSavedExportAction\(button,modal,isManager,localRows\)/);
+  assert.match(source, /bindSavedExportActionButtons\(m,isManager,localRows\)/);
+});
+
+test('manager saved-export modal provides a real bulk upload action for old local exports', () => {
+  const source = appSource();
+  const begin = source.indexOf('async function performSavedExportAction');
+  const end = source.indexOf('async function openSavedExports()', begin);
+  const actionBody = source.slice(begin, end);
+  assert.match(actionBody, /cloud-upload-all/);
+  assert.match(actionBody, /uploadManagerExportRecord\(/);
+  assert.match(source, /data-export-action="cloud-upload-all"/);
+  assert.match(source, /cloudUploadError/);
+  assert.match(source, /mrk-manager-exports/);
 });
