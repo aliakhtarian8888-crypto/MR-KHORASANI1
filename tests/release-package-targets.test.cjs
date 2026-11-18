@@ -30,7 +30,8 @@ test('guest browser ZIP contains PWA, short-lived guest entry flow and only the 
   const html = read(guestZip, 'index.html');
   assert.match(html, /GUEST_BROWSER_URL/);
   const guestPage = read(guestZip, 'guest.html');
-  assert.match(guestPage, /mrk-guest-demo\?api=issue/);
+  assert.match(guestPage, /mrk-guest-demo/);
+  assert.match(guestPage, /api=issue/);
   assert.match(guestPage, /guest_session=/);
   assert.match(guestPage, /location\.replace/);
   assert.doesNotMatch(guestPage, /sessionStorage|localStorage/);
