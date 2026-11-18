@@ -1,4 +1,4 @@
-const CACHE='mr-khorasani-2.9.8-separated-entry';
+const CACHE='mr-khorasani-2.9.9-separated-entry';
 const FILES=["./", "./index.html", "./guest.html", "./supabase-config.js", "./supabase-client.js", "./guest-runtime.js", "./warehouse-migration.js", "./mrk-data-tools.js", "./mrk-export-store.js", "./mrk-manager-export-storage.js", "./manifest.webmanifest", "./icon.svg", "./icon-192.png", "./icon-512.png", "./guest-entry-qr.png"];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
