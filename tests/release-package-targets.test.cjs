@@ -28,7 +28,10 @@ test('guest browser ZIP contains PWA, short-lived guest entry flow and only the 
   for (const name of ['index.html', 'guest.html', '.nojekyll', 'manifest.webmanifest', 'sw.js', 'guest-runtime.js', 'guest-entry-qr.png', 'README-GUEST-BROWSER-FA.txt']) assert.ok(entries.includes(name), `missing ${name}`);
   assert.ok(!entries.includes('android-install-qr.png'));
   const html = read(guestZip, 'index.html');
-  assert.match(html, /GUEST_BROWSER_URL/);\n  const guestPage = read(guestZip, 'guest.html');\n  assert.match(guestPage, /mrk-guest-demo\\?api=issue/);\n  assert.match(guestPage, /guest_session=/);
+  assert.match(html, /GUEST_BROWSER_URL/);
+  const guestPage = read(guestZip, 'guest.html');
+  assert.match(guestPage, /mrk-guest-demo\?api=issue/);
+  assert.match(guestPage, /guest_session=/);
   assert.match(html, /readEntry\(location\)\?\.autoStartGuest/);
   const manifest = JSON.parse(read(guestZip, 'manifest.webmanifest'));
   assert.equal(manifest.version, '2.9.6');
