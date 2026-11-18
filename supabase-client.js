@@ -97,5 +97,17 @@
     const t=await r.text();let j=null;try{j=t?JSON.parse(t):null}catch{j={error:t}}
     if(!r.ok||j?.ok===false)throw new Error(j?.error||'دریافت گزارش مهمان ناموفق بود.');return j;
   }
-  window.MRKCloud={CONFIG,readSession,saveSession,clearSession,refreshSession,login,logout,user,profile,memberships,company,claimInitialCompany,manageUsers,roleFa,pushState,pullState,uploadDocument,uploadBackup,guestAudit,ready:true};
+  const managerExportStorage=window.MRKManagerExportStorage?.createManagerExportStorage({
+    url:CONFIG.url,
+    publishableKey:CONFIG.publishableKey,
+    getSession:()=>refreshSession()
+  });
+  const managerStorageRequired=()=>{if(!managerExportStorage)throw new Error('ماژول فضای ذخیره‌سازی مدیر بارگذاری نشده است');return managerExportStorage};
+  window.MRKCloud={CONFIG,readSession,saveSession,clearSession,refreshSession,login,logout,user,profile,memberships,company,claimInitialCompany,manageUsers,roleFa,pushState,pullState,uploadDocument,uploadBackup,guestAudit,
+    uploadManagerExport:(companyId,name,blob)=>managerStorageRequired().upload(companyId,name,blob),
+    listManagerExports:(companyId,limit)=>managerStorageRequired().list(companyId,limit),
+    downloadManagerExport:(companyId,path)=>managerStorageRequired().download(companyId,path),
+    deleteManagerExport:(companyId,path)=>managerStorageRequired().remove(companyId,path),
+    managerExportBucket:'mrk-manager-exports',
+    ready:true};
 })();
