@@ -32,7 +32,9 @@ test('guest browser ZIP contains PWA, short-lived guest entry flow and only the 
   const guestPage = read(guestZip, 'guest.html');
   assert.match(guestPage, /mrk-guest-demo\?api=issue/);
   assert.match(guestPage, /guest_session=/);
-  assert.match(html, /readEntry\(location\)\?\.autoStartGuest/);
+  assert.match(guestPage, /location\.replace/);
+  assert.doesNotMatch(guestPage, /sessionStorage|localStorage/);
+  assert.match(html, /GUEST_BROWSER_URL.*guest\.html/);
   const manifest = JSON.parse(read(guestZip, 'manifest.webmanifest'));
   assert.equal(manifest.version, '2.9.6');
 });
