@@ -27,14 +27,14 @@ test('browser guest QR is separate and the one-time guest route is still auto-is
   assert.match(html, /guest\.html/);
 });
 test('Pages deployment publishes the Android APK at the stable QR target', () => {
-  assert.match(apkWorkflow, /cp dist\/MR-KHORASANI-2\.9\.8\.apk \"\$SITE\/downloads\/MR-KHORASANI-2\.9\.8\.apk\"/);
+  assert.match(apkWorkflow, /cp dist\/MR-KHORASANI-2\.9\.9\.apk \"\$SITE\/downloads\/MR-KHORASANI-2\.9\.9\.apk\"/);
   assert.match(apkWorkflow, /name: github-pages/);
   assert.match(apkWorkflow, /deploy-pages:\s+needs: test-and-build\s+if: github\.ref == 'refs\/heads\/main'/);
   assert.match(apkWorkflow, /actions\/deploy-pages/);
 });
 test('release workflow packages Android APK and browser guest PWA as two distinct ZIPs', () => {
-  assert.match(apkWorkflow, /MR-KHORASANI-ANDROID-INSTALL-v2\.9\.8\.zip/);
-  assert.match(apkWorkflow, /MR-KHORASANI-GUEST-BROWSER-v2\.9\.8\.zip/);
+  assert.match(apkWorkflow, /MR-KHORASANI-ANDROID-INSTALL-v2\.9\.9\.zip/);
+  assert.match(apkWorkflow, /MR-KHORASANI-GUEST-BROWSER-v2\.9\.9\.zip/);
   assert.match(apkWorkflow, /android-install-qr\.png/);
   assert.match(apkWorkflow, /guest-entry-qr\.png/);
 });
