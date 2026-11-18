@@ -39,11 +39,12 @@ test('warehouse inventory report suppresses zero-quantity warehouse details with
 
 test('backup email migrates only the known previous defaults to the requested address', () => {
   const source = appSource();
-  assert.match(source, /mrkhorasani8888@gmail\.com/);
-  assert.match(source, /www\.aliakhtarian8888@gmail\.com/);
-  assert.match(source, /mrkhorasani@gmail\.com/);
-  assert.match(source, /function normalizeBackupEmail/);
-  const normalize = source.match(/function normalizeBackupEmail\\(value\\)\\{[^}]+\\}/)?.[0];
+  assert.match(source, /mrkhorasani8888@gmail\\.com/);
+  assert.match(source, /www\\.aliakhtarian8888@gmail\\.com/);
+  assert.match(source, /mrkhorasani@gmail\\.com/);
+  const normalizeStart = source.indexOf('function normalizeBackupEmail(value)');
+  const normalizeEnd = source.indexOf('}', normalizeStart);
+  const normalize = normalizeStart >= 0 ? source.slice(normalizeStart, normalizeEnd + 1) : '';
   assert.ok(normalize, 'backup email migration helper must exist');
   assert.equal(vm.runInNewContext(normalize + '; normalizeBackupEmail("www.aliakhtarian8888@gmail.com")'), 'mrkhorasani8888@gmail.com');
   assert.equal(vm.runInNewContext(normalize + '; normalizeBackupEmail("mrkhorasani@gmail.com")'), 'mrkhorasani8888@gmail.com');
@@ -53,15 +54,15 @@ test('backup email migrates only the known previous defaults to the requested ad
 test('manager export list supports authenticated cloud list/download/delete and local recovery by id', () => {
   const source = appSource();
   const begin = source.indexOf('async function openSavedExports()');
-  const end = source.indexOf('\nACT.savedExports=', begin);
+  const end = source.indexOf('\\nACT.savedExports=', begin);
   const body = source.slice(begin, end);
-  assert.match(source, /MRKCloud\.uploadManagerExport/);
-  assert.match(source, /MRKCloud\.listManagerExports/);
-  assert.match(source, /MRKCloud\.downloadManagerExport/);
-  assert.match(source, /MRKCloud\.deleteManagerExport/);
-  assert.match(source, /async function resolveLocalExportRecord\\(id\\)/);
-  assert.match(body, /resolveLocalExportRecord\\(id\\)/);
-  assert.match(body, /addEventListener\(['"]click['"]/);
+  assert.ok(source.includes('MRKCloud.uploadManagerExport'));
+  assert.ok(source.includes('MRKCloud.listManagerExports'));
+  assert.ok(source.includes('MRKCloud.downloadManagerExport'));
+  assert.ok(source.includes('MRKCloud.deleteManagerExport'));
+  assert.ok(source.includes('async function resolveLocalExportRecord(id)'));
+  assert.ok(body.includes('resolveLocalExportRecord(id)'));
+  assert.match(body, /addEventListener\\(['"]click['"]/);
   assert.match(body, /data-export-action="cloud-upload"/);
   assert.match(body, /data-export-action="cloud-download"/);
   assert.match(body, /data-export-action="cloud-delete"/);
