@@ -10,7 +10,7 @@ VERSION = "2.9.8"
 GUEST_FILES = [
     ".nojekyll", "index.html", "guest.html", "manifest.webmanifest", "supabase-config.js",
     "supabase-client.js", "guest-runtime.js", "warehouse-migration.js",
-    "mrk-data-tools.js", "mrk-export-store.js", "sw.js", "icon.svg",
+    "mrk-data-tools.js", "mrk-export-store.js", "mrk-manager-export-storage.js", "sw.js", "icon.svg",
     "icon-192.png", "icon-512.png", "apple-touch-icon.png", "brand-mr.svg",
     "guest-entry-qr.png", "README-GUEST-BROWSER-FA.txt",
 ]
