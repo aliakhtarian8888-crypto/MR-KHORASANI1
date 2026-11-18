@@ -516,7 +516,7 @@ function paysHtml(){const d=UI.draft;return (d.pays||[]).map((r,i)=>`<div class=
 function calcDraft(){const d=UI.draft,rows=(d.items||[]).filter(i=>i.g&&num(i.q)>0).map(i=>({q:num(i.q),line:Math.round(num(i.q)*num(i.p))}));let gross=0;rows.forEach(r=>gross+=r.line);const disc=Math.min(Math.round(num(d.discAmt)),gross),ship=Math.round(num(d.ship)),rate=Math.max(0,Math.min(100,num(d.vatRate==null?taxRateFor(UI.type):d.vatRate)))/100;let tax=0,ds=0;rows.forEach((r,ix)=>{const x=ix===rows.length-1?disc-ds:(gross?Math.round(disc*r.line/gross):0);ds+=x;if(d.vat!==false)tax+=Math.round((r.line-x)*rate)});const total=gross-disc+ship+tax;let paid=0;(d.pays||[]).forEach(p=>paid+=Math.round(num(p.amt)));return{gross,disc,ship,tax,total,paid,rest:total-paid,rate:rate*100}}
 function totalsHtml(){const c=calcDraft();return `<div class="trow"><span>جمع ردیف‌ها</span><b>${fmt(c.gross)}</b></div><div class="trow"><span>تخفیف کل</span><b>${fmt(c.disc)}</b></div><div class="trow"><span>هزینه حمل</span><b>${fmt(c.ship)}</b></div><div class="trow"><span>مالیات (${fa(c.rate)}٪)</span><b>${fmt(c.tax)}</b></div><div class="trow big"><span>مبلغ نهایی فاکتور</span><b>${fmt(c.total)}</b></div><div class="trow"><span>${UI.type==='فروش'?'دریافتی':'پرداختی'} هنگام صدور</span><b>${fmt(c.paid)}</b></div><div class="trow ${c.rest<0?'neg':''}"><span>${c.rest<0?'مازاد (غیرمجاز)':'مانده به‌صورت نسیه'}</span><b>${fmt(Math.abs(c.rest))}</b></div>`}
 function itemsHtml(){const d=UI.draft,sale=UI.type==='فروش',transfer=UI.type==='انتقال بین انبارها',needsPrice=['فروش','خرید','رسید کالا'].includes(UI.type),opts=sale?[['auto','خودکار (به ترتیب انبارها)'],...warehouseOptions()]:warehouseOptions();return (d.items||[]).map((r,i)=>{const g=S.goods.find(x=>x.id===r.g),u=g?convertibleUnits(g):UNIT_CHOICES,unit=r.unit||(g&&g.unit)||'عدد';return `<div class="irow"><div class="grid2x"><select data-i="${i}" data-f="g">${goodOpts(r.g)}</select><button class="x" data-a="delItem" data-p="${i}">✕</button></div><div class="stk" id="stk${i}">${stockTxt(r.g)}</div>${transfer?'<div class="info">انبار مبدأ و مقصد در بالای فرم تعیین می‌شود.</div>':`<div><small>انبار</small><select data-i="${i}" data-f="w">${sel(opts,r.w)}</select></div>`}<div class="${needsPrice?'grid3':'grid2'}"><div><small>مقدار</small><input class="num" inputmode="decimal" data-i="${i}" data-f="q" value="${esc(r.q)}" placeholder="۰"></div><div><small>واحد ورود</small><select data-i="${i}" data-f="unit">${sel((u||[unit]).map(x=>[x,x]),unit)}</select></div>${needsPrice?`<div><small>${UI.type==='فروش'?'قیمت فروش واحد':'بهای واحد (ریال)'}</small><input class="money" inputmode="numeric" data-i="${i}" data-f="p" value="${esc(r.p)}" placeholder="۰"></div>`:''}</div><div class="chkmsg" id="chk${i}">${rowMsg(i)}</div></div>`}).join('')}
-function stockTxt(g){if(!g)return 'پس از انتخاب کالا، موجودی مقداری و ریالی انبارها نمایش داده می‌شود.';const parts=warehouseList().map(w=>{const q=stockOf(g,w.id),v=stockValueOf(g,w.id),avg=q?Math.round(v/q):0;return `${esc(w.name)}: ${fmtq(q)} ${esc((S.goods.find(x=>x.id===g)||{}).unit||'عدد')} × ${fmt(avg)} = ${fmt(v)} ریال`});return parts.join(' | ')+' | جمع مقدار '+fmtq(parts.reduce((a,_,i)=>a+stockOf(g,warehouseList()[i].id),0))+' '+esc((S.goods.find(x=>x.id===g)||{}).unit||'عدد')}
+function stockTxt(g){if(!g)return 'پس از انتخاب کالا، موجودی مقداری و ریالی انبارها نمایش داده می‌شود.';const good=S.goods.find(x=>x.id===g),unit=esc((good||{}).unit||'عدد'),active=warehouseList().filter(w=>Math.abs(num(stockOf(g,w.id)))>1e-9),parts=active.map(w=>{const q=stockOf(g,w.id),v=stockValueOf(g,w.id),avg=q?Math.round(v/q):0;return esc(w.name)+': '+fmtq(q)+' '+unit+' × '+fmt(avg)+' = '+fmt(v)+' ریال'}),total=warehouseList().reduce((sum,w)=>sum+stockOf(g,w.id),0);return (parts.join(' | ')||'بدون موجودی در هیچ انباری')+' | جمع مقدار '+fmtq(total)+' '+unit}
 function stockValueOf(g,w){let v=(B.inv[g+'|'+w]||{v:0}).v;if(UI.edit)(B.opd[UI.edit]||{moves:[]}).moves.forEach(x=>{if(x.g===g&&x.w===w)v-=x.v});return v}
 function rowMsg(i){const d=UI.draft,r=d.items[i];if(!r||!r.g)return '';const good=S.goods.find(x=>x.id===r.g),q=(()=>{try{return toBaseQuantity(good,num(r.q),r.unit||good.unit)}catch(e){return Infinity}})();if(q<=0)return '';if(!Number.isFinite(q))return '⛔ واحد انتخاب‌شده برای این کالا قابل تبدیل نیست.';if(UI.type==='فروش'&&(!r.w||r.w==='auto')){const available=warehouseList().reduce((a,w)=>a+stockOf(r.g,w.id),0),same=d.items.filter(x=>x.g===r.g).reduce((a,x)=>{try{return a+toBaseQuantity(good,num(x.q),x.unit||good.unit)}catch(e){return Infinity}},0);if(same>available+1e-9)return `⛔ موجودی کل کالا در تمام انبارها ${fmtq(available)} است؛ تعداد درخواستی ${fmtq(same)} می‌باشد.`;return ''}let wid='';if(UI.type==='فروش')wid=String(r.w);else if(UI.type==='انتقال بین انبارها')wid=String(d.fromWh||'');else if(UI.type==='حواله خروج کالا')wid=String(r.w||warehouseList()[0].id);else return '';const available=stockOf(r.g,wid);let same=0;d.items.forEach(x=>{if(x.g!==r.g)return;const xw=UI.type==='انتقال بین انبارها'?String(d.fromWh||''):String(x.w||warehouseList()[0].id);if(xw===wid){try{same+=toBaseQuantity(good,num(x.q),x.unit||good.unit)}catch(e){same=Infinity}}});if(same>available+1e-9)return `⛔ موجودی «${esc(warehouseName(wid))}» فقط ${fmtq(available)} است؛ تعداد درخواستی ${fmtq(same)} می‌باشد.`;return ''}
 function allMsgs(){return (UI.draft.items||[]).map((_,i)=>rowMsg(i)).filter(Boolean)}
@@ -722,7 +722,7 @@ REP.iv=R('موجودی انبارها',[],r=>{
   whs.forEach(w=>{
    const a=B.inv[g.id+'|'+w.id]||{q:0,v:0};
    qsum+=num(a.q);vsum+=num(a.v);
-   if(Math.abs(num(a.q))>1e-9)active.push(w.name+': '+fmtq(a.q)+' '+(g.unit||'عدد')+' / بهای واحد '+fmt(qsum?Math.round(num(a.v)/num(a.q)):0)+' / ارزش '+fmt(a.v)+' ریال');
+   if(Math.abs(num(a.q))>1e-9)active.push(w.name+': '+fmtq(a.q)+' '+(g.unit||'عدد')+' / بهای واحد '+fmt(Math.abs(num(a.q))>1e-9?Math.round(num(a.v)/num(a.q)):0)+' / ارزش '+fmt(a.v)+' ریال');
   });
   grandQ+=qsum;grandV+=vsum;
   rows.push([g.code?fa(g.code):'',g.name,g.unit||'',active.join(' | ')||'بدون موجودی',fmtq(qsum),Math.round(qsum?vsum/qsum:0),Math.round(vsum)]);
@@ -985,6 +985,112 @@ function saveBlob(name,blob,options){
  });
  return true;
 }
+async function performSavedExportAction(button,modal,isManager,localRows){
+ const action=button.dataset.exportAction,id=button.dataset.exportId,path=button.dataset.exportPath;
+ button.disabled=true;
+ try{
+  if(action==='download'){
+   const record=await resolveLocalExportRecord(id);
+   if(!record)throw new Error('فایل ذخیره‌شده پیدا نشد');
+   if(record.blob)return await saveRecordToDevice(record);
+   if(record.cloudPath){
+    const blob=await MRKCloud.downloadManagerExport(UI.companyId,record.cloudPath);
+    return await saveRecordToDevice({...record,blob});
+   }
+   throw new Error('محتوای فایل برای دریافت پیدا نشد');
+  }
+  if(action==='share'){
+   let record=await resolveLocalExportRecord(id);
+   if(!record)throw new Error('فایل ذخیره‌شده پیدا نشد');
+   if(!record.blob&&record.cloudPath)record={...record,blob:await MRKCloud.downloadManagerExport(UI.companyId,record.cloudPath)};
+   if(!record.blob)throw new Error('محتوای فایل برای اشتراک پیدا نشد');
+   return await shareExportRecord(record);
+  }
+  if(action==='delete'){
+   if(!confirm('نسخه محلی این فایل از حافظه همین دستگاه حذف شود؟ نسخه ابری احتمالی حذف نخواهد شد.'))return;
+   const record=await resolveLocalExportRecord(id);
+   if(record){
+    if(record.persisted&&localExportStore)await localExportStore.remove(id);
+    exportRecordCache.delete(String(id));
+   }
+   modal.remove();await openSavedExports();toast('نسخه محلی فایل حذف شد');return;
+  }
+  if(action==='cloud-upload'){
+   if(!isManager)throw new Error('دسترسی مدیر سیستم لازم است');
+   const record=await resolveLocalExportRecord(id);
+   if(!record?.blob)throw new Error('فایل محلی برای بارگذاری پیدا نشد');
+   const uploaded=await uploadManagerExportRecord(record);
+   modal.remove();await openSavedExports();toast('بارگذاری ابری انجام شد. مسیر واقعی: '+managerExportPathText(uploaded.cloudPath));return;
+  }
+  if(action==='cloud-upload-all'){
+   if(!isManager)throw new Error('دسترسی مدیر سیستم لازم است');
+   const source=[...(Array.isArray(localRows)?localRows:[]),...Array.from(exportRecordCache.values())];
+   const unique=new Map();
+   source.forEach(record=>{if(record&&record.id)unique.set(String(record.id),record)});
+   const pending=Array.from(unique.values()).filter(record=>record.blob&&!record.cloudPath);
+   if(!pending.length){toast('فایل محلیِ منتقل‌نشده‌ای برای بارگذاری وجود ندارد.');return}
+   if(!confirm('تعداد '+fa(pending.length)+' فایل محلی به فضای خصوصی مدیر سیستم منتقل شود؟'))return;
+   let uploadedCount=0;const failures=[];
+   for(const item of pending){
+    const record=await resolveLocalExportRecord(item.id)||item;
+    try{
+     await uploadManagerExportRecord(record);
+     if(record.persisted&&localExportStore)await localExportStore.update(record.id,{cloudUploadError:''});
+     uploadedCount++;
+    }catch(error){
+     const message=String(error?.message||error);
+     record.cloudUploadError=message;
+     exportRecordCache.set(String(record.id),record);
+     if(record.persisted&&localExportStore)try{await localExportStore.update(record.id,{cloudUploadError:message})}catch(updateError){}
+     failures.push(record.name+': '+message);
+    }
+   }
+   modal.remove();await openSavedExports();
+   toast('انتقال به فضای ابری پایان یافت: '+fa(uploadedCount)+' موفق، '+fa(failures.length)+' ناموفق.'+(failures.length?' خطا: '+failures[0]:''));
+   return;
+  }
+  if(action==='cloud-download'){
+   if(!isManager)throw new Error('دسترسی مدیر سیستم لازم است');
+   const blob=await MRKCloud.downloadManagerExport(UI.companyId,path);
+   const fileName=button.dataset.exportName||String(path||'').split('/').pop()||'export.bin';
+   await saveRecordToDevice({name:fileName,blob,type:blob.type,size:blob.size});return;
+  }
+  if(action==='cloud-copy-path'){
+   if(!isManager)throw new Error('دسترسی مدیر سیستم لازم است');
+   const actual=managerExportPathText(path);
+   const copied=await copyText(actual);
+   toast(copied?'مسیر واقعی فایل کپی شد.':('مسیر واقعی فایل: '+actual));return;
+  }
+  if(action==='cloud-delete'){
+   if(!isManager)throw new Error('دسترسی مدیر سیستم لازم است');
+   if(!confirm('این فایل از فضای ابری خصوصی مدیر حذف شود؟'))return;
+   await MRKCloud.deleteManagerExport(UI.companyId,path);
+   for(const record of exportRecordCache.values()){
+    if(record.cloudPath===path){
+     const patch={cloudPath:'',cloudBucket:'',cloudSavedAt:'',cloudSize:0};
+     if(record.persisted&&localExportStore)await localExportStore.update(record.id,patch);
+     Object.assign(record,patch);
+    }
+   }
+   modal.remove();await openSavedExports();toast('فایل از فضای ابری مدیر حذف شد');return;
+  }
+ }catch(error){
+  toast('عملیات فایل ناموفق بود: '+(error?.message||'خطای نامشخص'));
+ }finally{
+  if(button.isConnected)button.disabled=false;
+ }
+}
+function bindSavedExportActionButtons(modal,isManager,localRows){
+ modal.querySelectorAll('[data-export-action]').forEach(button=>{
+  button.type='button';
+  button.addEventListener('click',event=>{
+   event.preventDefault();
+   event.stopPropagation();
+   if(button.disabled)return;
+   performSavedExportAction(button,modal,isManager,localRows);
+  });
+ });
+}
 async function openSavedExports(){
  try{
   let localRows=[];
@@ -1012,96 +1118,39 @@ async function openSavedExports(){
    const bt=Number(b.createdAt)||Date.parse(b.createdAt)||0;
    return bt-at;
   });
+  const pendingCount=localRows.filter(r=>r&&r.blob&&!r.cloudPath).length;
   const cloudNote=isManager
-   ? '<div class="card soft"><b>فضای ذخیره‌سازی مدیر سیستم</b><div class="hint">مخزن خصوصی Supabase Storage — '+MANAGER_EXPORT_BUCKET+' — مسیر فایل‌ها: '+esc(UI.companyId)+'/exports/نام‌فایل. فقط مدیر سیستم و مدیرعامل شرکت به فهرست و دریافت فایل‌ها دسترسی دارند.</div>'+(cloudError?'<div class="hint warn">دریافت فهرست ابری ناموفق بود: '+esc(cloudError)+'</div>':'<div class="hint">فایل‌های جدید به‌صورت خودکار در فضای ابری ذخیره می‌شوند. برای فایل‌های قدیمیِ محلی از دکمه «انتقال به فضای ابری مدیر» استفاده کنید.</div>')+'</div>'
-   : '<div class="hint">این فهرست شامل خروجی‌های محلی این دستگاه است. فضای ابری خروجی‌های مدیریتی فقط در حساب مدیر سیستم/مدیرعامل نمایش داده می‌شود.</div>';
+   ? '<div class="card soft"><b>فضای ذخیره‌سازی مدیر سیستم</b><div class="hint">مخزن خصوصی Supabase Storage — '+MANAGER_EXPORT_BUCKET+' — مسیر واقعی فایل‌ها: '+esc(UI.companyId)+'/exports/نام‌فایل. فقط حساب‌های OWNER و ADMIN فعال به فهرست و دریافت فایل‌ها دسترسی دارند.</div>'+(cloudError?'<div class="hint warn">دریافت فهرست ابری ناموفق بود: '+esc(cloudError)+'</div>':'<div class="hint">فایل‌های جدید پس از تولید به‌صورت خودکار در مخزن خصوصی مدیر بارگذاری می‌شوند. فایل‌های قدیمی محلی نیز قابل انتقال هستند.</div>')+(pendingCount?'<button type="button" class="btn pri wide mt" data-export-action="cloud-upload-all">انتقال همه فایل‌های محلی به فضای ابری مدیر ('+fa(pendingCount)+')</button>':'')+'</div>'
+   : '<div class="hint">این فهرست شامل خروجی‌های محلی این دستگاه است. مخزن خصوصی خروجی‌های مدیریتی فقط برای حساب‌های OWNER و ADMIN فعال نمایش داده می‌شود.</div>';
   const body=rows.length?rows.map(r=>{
    const size=window.MRKExportStore?.formatBytes(r.size)||'';
    const created=r.createdAt?new Date(r.createdAt).toLocaleString('fa-IR'):'';
    const path=r.cloudPath||r.path||'';
    const status=r.cloud?'ذخیره‌شده در فضای ابری خصوصی مدیر':(r.persisted?'ذخیره محلی در حافظه برنامه':'موقت همین نشست');
+   const errorText=r.cloudUploadError?'<div class="hint warn">خطای انتقال ابری: '+esc(r.cloudUploadError)+'</div>':'';
    const pathText=isManager&&r.cloud?'<div class="hint" dir="ltr" style="overflow-wrap:anywhere">مسیر واقعی: '+esc(managerExportPathText(path))+'</div>':'';
    const actions=[];
    if(r.local&&r.blob){
-    actions.push('<button class="btn sm" data-export-action="download" data-export-id="'+esc(r.id)+'">ذخیره در گوشی</button>');
-    actions.push('<button class="btn sm" data-export-action="share" data-export-id="'+esc(r.id)+'">اشتراک</button>');
-    actions.push('<button class="btn sm dng" data-export-action="delete" data-export-id="'+esc(r.id)+'">حذف محلی</button>');
-    if(isManager&&!r.cloud)actions.push('<button class="btn sm pri" data-export-action="cloud-upload" data-export-id="'+esc(r.id)+'">انتقال به فضای ابری مدیر</button>');
+    actions.push('<button type="button" class="btn sm" data-export-action="download" data-export-id="'+esc(r.id)+'">ذخیره در گوشی</button>');
+    actions.push('<button type="button" class="btn sm" data-export-action="share" data-export-id="'+esc(r.id)+'">اشتراک</button>');
+    actions.push('<button type="button" class="btn sm dng" data-export-action="delete" data-export-id="'+esc(r.id)+'">حذف محلی</button>');
+    if(isManager&&!r.cloud)actions.push('<button type="button" class="btn sm pri" data-export-action="cloud-upload" data-export-id="'+esc(r.id)+'">انتقال به فضای ابری مدیر</button>');
    }
    if(isManager&&r.cloud){
-    actions.push('<button class="btn sm" data-export-action="cloud-download" data-export-path="'+esc(path)+'" data-export-name="'+esc(r.name)+'">دریافت از فضای ابری</button>');
-    actions.push('<button class="btn sm dng" data-export-action="cloud-delete" data-export-path="'+esc(path)+'">حذف ابری</button>');
+    actions.push('<button type="button" class="btn sm" data-export-action="cloud-download" data-export-path="'+esc(path)+'" data-export-name="'+esc(r.name)+'">دریافت از فضای ابری</button>');
+    actions.push('<button type="button" class="btn sm" data-export-action="cloud-copy-path" data-export-path="'+esc(path)+'">کپی مسیر</button>');
+    actions.push('<button type="button" class="btn sm dng" data-export-action="cloud-delete" data-export-path="'+esc(path)+'">حذف ابری</button>');
    }
-   return '<div class="orow" style="align-items:center;gap:8px;flex-wrap:wrap"><div style="min-width:150px;flex:1"><b>'+esc(r.name)+'</b><div class="hint">'+esc(size)+' — '+esc(created)+' — '+esc(status)+'</div>'+pathText+'</div><div class="acts">'+actions.join('')+'</div></div>';
+   return '<div class="orow" style="align-items:center;gap:8px;flex-wrap:wrap"><div style="min-width:150px;flex:1"><b>'+esc(r.name)+'</b><div class="hint">'+esc(size)+' — '+esc(created)+' — '+esc(status)+'</div>'+errorText+pathText+'</div><div class="acts">'+actions.join('')+'</div></div>';
   }).join(''):'<p class="hint">هنوز فایلی در حافظه محلی یا فضای ابری مدیر ذخیره نشده است.</p>';
   const m=document.createElement('div');m.className='modal';
-  m.innerHTML='<div class="mbox"><b>فایل‌های خروجی ذخیره‌شده</b><p class="hint">دکمه ذخیره، فایل را در دستگاه دریافت می‌کند؛ اشتراک، منوی فایل/اشتراک‌گذاری تلفن را باز می‌کند. حذف محلی، نسخه دستگاه را حذف می‌کند و حذف ابری فقط با مجوز مدیر سیستم/مدیرعامل انجام می‌شود.</p>'+cloudNote+'<div style="max-height:55vh;overflow:auto">'+body+'</div><div class="row mt"><button class="btn" id="savedExportsClose">بستن</button></div></div>';
+  m.innerHTML='<div class="mbox"><b>فایل‌های خروجی ذخیره‌شده</b><p class="hint">ذخیره در گوشی، فایل را به مسیر انتخاب‌شده منتقل می‌کند؛ اشتراک، منوی اشتراک‌گذاری دستگاه را باز می‌کند. حذف محلی فقط نسخه همین دستگاه را حذف می‌کند. نسخه ابری در مخزن خصوصی مدیر نگهداری می‌شود.</p>'+cloudNote+'<div style="max-height:55vh;overflow:auto">'+body+'</div><div class="row mt"><button type="button" class="btn" id="savedExportsClose">بستن</button></div></div>';
   document.body.appendChild(m);
-  m.querySelector('#savedExportsClose').onclick=()=>m.remove();
-  m.addEventListener('click',async event=>{
-   const button=event.target?.closest?.('[data-export-action]');
-   if(!button||!m.contains(button)||button.disabled)return;
-   event.preventDefault();
-   const action=button.dataset.exportAction,id=button.dataset.exportId,path=button.dataset.exportPath;
-   button.disabled=true;
-   try{
-    if(action==='download'){
-     const record=await resolveLocalExportRecord(id);
-     if(!record)throw new Error('فایل ذخیره‌شده پیدا نشد');
-     if(record.blob)return saveRecordToDevice(record);
-     if(record.cloudPath){
-      const blob=await MRKCloud.downloadManagerExport(UI.companyId,record.cloudPath);
-      return saveRecordToDevice({...record,blob});
-     }
-     throw new Error('محتوای فایل برای دریافت پیدا نشد');
-    }
-    if(action==='share'){
-     let record=await resolveLocalExportRecord(id);
-     if(!record)throw new Error('فایل ذخیره‌شده پیدا نشد');
-     if(!record.blob&&record.cloudPath)record={...record,blob:await MRKCloud.downloadManagerExport(UI.companyId,record.cloudPath)};
-     if(!record.blob)throw new Error('محتوای فایل برای اشتراک پیدا نشد');
-     return shareExportRecord(record);
-    }
-    if(action==='delete'){
-     if(!confirm('نسخه محلی این فایل از حافظه همین دستگاه حذف شود؟ نسخه ابری احتمالی حذف نخواهد شد.'))return;
-     const record=await resolveLocalExportRecord(id);if(record){
-      if(record.persisted&&localExportStore)await localExportStore.remove(id);
-      exportRecordCache.delete(String(id));
-     }
-     m.remove();await openSavedExports();toast('نسخه محلی فایل حذف شد');return;
-    }
-    if(action==='cloud-upload'){
-     if(!isManager)throw new Error('دسترسی مدیر سیستم لازم است');
-     const record=await resolveLocalExportRecord(id);
-     if(!record?.blob)throw new Error('فایل محلی برای بارگذاری پیدا نشد');
-     const uploaded=await uploadManagerExportRecord(record);
-     m.remove();await openSavedExports();toast('بارگذاری ابری انجام شد. مسیر: '+managerExportPathText(uploaded.cloudPath));return;
-    }
-    if(action==='cloud-download'){
-     if(!isManager)throw new Error('دسترسی مدیر سیستم لازم است');
-     const blob=await MRKCloud.downloadManagerExport(UI.companyId,path);
-     const fileName=button.dataset.exportName||String(path||'').split('/').pop()||'export.bin';
-     await saveRecordToDevice({name:fileName,blob,type:blob.type,size:blob.size});
-     return;
-    }
-    if(action==='cloud-delete'){
-     if(!isManager)throw new Error('دسترسی مدیر سیستم لازم است');
-     if(!confirm('این فایل از فضای ابری خصوصی مدیر حذف شود؟'))return;
-     await MRKCloud.deleteManagerExport(UI.companyId,path);
-     for(const record of exportRecordCache.values()){
-      if(record.cloudPath===path){
-       const patch={cloudPath:'',cloudBucket:'',cloudSavedAt:'',cloudSize:0};
-       if(record.persisted&&localExportStore)await localExportStore.update(record.id,patch);
-       Object.assign(record,patch);
-      }
-     }
-     m.remove();await openSavedExports();toast('فایل از فضای ابری مدیر حذف شد');return;
-    }
-   }catch(error){toast('عملیات فایل ناموفق بود: '+(error?.message||'خطای نامشخص'))}
-   finally{if(button.isConnected)button.disabled=false}
-  });
+  m.querySelector('#savedExportsClose').addEventListener('click',event=>{event.preventDefault();event.stopPropagation();m.remove()});
+  bindSavedExportActionButtons(m,isManager,localRows);
  }catch(error){toast('خواندن فایل‌های ذخیره‌شده ناموفق بود: '+(error?.message||''))}
 }
+
 ACT.savedExports=()=>openSavedExports();
 const fname=(t,ext)=>{const d=new Date(),parts=today().split('/').map(Number),date=fa(parts[2])+' '+MONTHS[parts[1]-1]+' '+fa(parts[0]),time=[d.getHours(),d.getMinutes(),d.getSeconds()].map(n=>fa(p2(n))).join('-');return(t+'_'+(UI.user?UI.user.name:'کاربر')+'_'+date+'_ساعت-'+time).replace(/[\\/:*?"<>|]/g,'-')+'.'+ext};
 function secsRows(secs){const rows=[];secs.forEach(s=>{if(s.title)rows.push([s.title]);rows.push(s.cols);s.rows.forEach(r=>rows.push(r.map(v=>typeof v==='number'?v:String(v==null?'':v))));if(s.foot)rows.push(s.foot);rows.push([])});return rows}
