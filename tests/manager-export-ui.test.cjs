@@ -39,9 +39,9 @@ test('warehouse inventory report suppresses zero-quantity warehouse details with
 
 test('backup email migrates only the known previous defaults to the requested address', () => {
   const source = appSource();
-  assert.match(source, /mrkhorasani8888@gmail\\.com/);
-  assert.match(source, /www\\.aliakhtarian8888@gmail\\.com/);
-  assert.match(source, /mrkhorasani@gmail\\.com/);
+  assert.ok(source.includes('mrkhorasani8888@gmail.com'));
+  assert.ok(source.includes('www.aliakhtarian8888@gmail.com'));
+  assert.ok(source.includes('mrkhorasani@gmail.com'));
   const normalizeStart = source.indexOf('function normalizeBackupEmail(value)');
   const normalizeEnd = source.indexOf('}', normalizeStart);
   const normalize = normalizeStart >= 0 ? source.slice(normalizeStart, normalizeEnd + 1) : '';
@@ -54,7 +54,7 @@ test('backup email migrates only the known previous defaults to the requested ad
 test('manager export list supports authenticated cloud list/download/delete and local recovery by id', () => {
   const source = appSource();
   const begin = source.indexOf('async function openSavedExports()');
-  const end = source.indexOf('\\nACT.savedExports=', begin);
+  const end = source.indexOf('ACT.savedExports=', begin);
   const body = source.slice(begin, end);
   assert.ok(source.includes('MRKCloud.uploadManagerExport'));
   assert.ok(source.includes('MRKCloud.listManagerExports'));
@@ -62,12 +62,12 @@ test('manager export list supports authenticated cloud list/download/delete and 
   assert.ok(source.includes('MRKCloud.deleteManagerExport'));
   assert.ok(source.includes('async function resolveLocalExportRecord(id)'));
   assert.ok(body.includes('resolveLocalExportRecord(id)'));
-  assert.match(body, /addEventListener\\(['"]click['"]/);
-  assert.match(body, /data-export-action="cloud-upload"/);
-  assert.match(body, /data-export-action="cloud-download"/);
-  assert.match(body, /data-export-action="cloud-delete"/);
-  assert.match(source, /'OWNER','ADMIN'/);
-  assert.match(body, /mrk-manager-exports/);
+  assert.ok(body.includes("m.addEventListener('click'"));
+  assert.ok(body.includes('data-export-action="cloud-upload"'));
+  assert.ok(body.includes('data-export-action="cloud-download"'));
+  assert.ok(body.includes('data-export-action="cloud-delete"'));
+  assert.ok(source.includes("['OWNER','ADMIN']"));
+  assert.ok(body.includes('mrk-manager-exports'));
 });
 
 test('manager export storage helper is loaded and cached for offline app startup', () => {
