@@ -11,7 +11,8 @@ const apkWorkflow = fs.readFileSync(path.join(root, '.github/workflows/android-a
 test('native Android starts at organization login and cannot enter the guest session flow', () => {
   assert.match(html, /function isNativeAndroidApp\(\)/);
   assert.match(html, /if\(isNativeAndroidApp\(\)\)\{[\s\S]{0,220}start\(\);return\}/);
-  assert.match(html, /async function startGuest\(entryToken\)\{if\(isNativeAndroidApp\(\)\)/);
+  assert.match(html, /async function startGuest/);
+  assert.match(html, /if\(isNativeAndroidApp\(\)\)\{start\(\);return\}/);
 });
 test('guest QR settings are hidden in the native Android application', () => {
   assert.match(html, /if\(isNativeAndroidApp\(\)\)\{const guestTabIndex=tabs\.findIndex/);
