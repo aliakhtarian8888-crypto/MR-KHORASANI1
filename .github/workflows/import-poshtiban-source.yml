@@ -1,0 +1,66 @@
+name: Import MRK 2.11.0 Poshtiban source archive
+
+on:
+  push:
+    branches: [poshtiban-Q-baha]
+    paths:
+      - 'release-staging/MR-KHORASANI-POSHTIBAN-Q-BAHA-ANDROID-SOURCE-v2.11.0.zip'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: import-poshtiban-q-baha
+  cancel-in-progress: false
+
+jobs:
+  import-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout destination branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: poshtiban-Q-baha
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate and extract the full Android source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARCHIVE=release-staging/MR-KHORASANI-POSHTIBAN-Q-BAHA-ANDROID-SOURCE-v2.11.0.zip
+          test -s "$ARCHIVE"
+          unzip -t "$ARCHIVE"
+          mkdir -p "$RUNNER_TEMP/mrk-source"
+          unzip -q "$ARCHIVE" -d "$RUNNER_TEMP/mrk-source"
+          test -s "$RUNNER_TEMP/mrk-source/index.html"
+          test -s "$RUNNER_TEMP/mrk-source/manifest.webmanifest"
+          test -s "$RUNNER_TEMP/mrk-source/android/app/build.gradle"
+          test -s "$RUNNER_TEMP/mrk-source/supabase-client.js"
+          test -s "$RUNNER_TEMP/mrk-source/.github/workflows/android-apk.yml"
+
+      - name: Replace branch source while preserving this importer and staging ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          rsync -a --delete \
+            --exclude='.git/' \
+            --exclude='release-staging/' \
+            --exclude='.github/workflows/import-poshtiban-source.yml' \
+            "$RUNNER_TEMP/mrk-source/" ./
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No source differences to import."
+            exit 0
+          fi
+          git commit -m "feat: import MR KHORASANI 2.11.0 Poshtiban source"
+          git push origin HEAD:poshtiban-Q-baha
+
+      - name: Dispatch Android build, ZIP packaging and GitHub Pages deploy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/actions/workflows/android-apk.yml/dispatches" -f ref=poshtiban-Q-baha
