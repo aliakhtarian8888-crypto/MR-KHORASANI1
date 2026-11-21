@@ -1,10 +1,10 @@
-name: Import MRK 2.11.0 Poshtiban source archive
+name: Import MRK 2.11.1 Poshtiban source archive
 
 on:
   push:
     branches: [poshtiban-Q-baha]
     paths:
-      - 'release-staging/MR-KHORASANI-POSHTIBAN-Q-BAHA-ANDROID-SOURCE-v2.11.0.zip'
+      - 'release-staging/MR-KHORASANI-POSHTIBAN-Q-BAHA-ANDROID-SOURCE-v2.11.1.zip'
   workflow_dispatch:
 
 permissions:
@@ -29,7 +29,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ARCHIVE=release-staging/MR-KHORASANI-POSHTIBAN-Q-BAHA-ANDROID-SOURCE-v2.11.0.zip
+          ARCHIVE=release-staging/MR-KHORASANI-POSHTIBAN-Q-BAHA-ANDROID-SOURCE-v2.11.1.zip
           test -s "$ARCHIVE"
           unzip -t "$ARCHIVE"
           mkdir -p "$RUNNER_TEMP/mrk-source"
@@ -56,7 +56,7 @@ jobs:
             echo "No source differences to import."
             exit 0
           fi
-          git commit -m "feat: import MR KHORASANI 2.11.0 Poshtiban source"
+          git commit -m "feat: import MR KHORASANI 2.11.1 Poshtiban source"
           git push origin HEAD:poshtiban-Q-baha
 
       - name: Dispatch Android build, ZIP packaging and GitHub Pages deploy
